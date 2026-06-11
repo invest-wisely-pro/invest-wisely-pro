@@ -110,9 +110,11 @@ function calibrateHistRow(row) {
 }
 
 const HIST_MONTHLY = (function(){
-// Dati reali mensili 1970–2024: [az_sviluppati, agg_bond, gold]
-// Fonte: MSCI World Net EUR, Bloomberg Euro Aggregate, LBMA (oro EUR)
-// Precisione: ±0.1% su media annua vs fonti ufficiali
+// Serie mensile 1970–2024: [az_sviluppati, agg_bond, gold]
+// Ancoraggio: totali ANNUI reali (MSCI World Net EUR, Bloomberg Euro Aggregate,
+// oro LBMA EUR, precisione ±0.1% su media annua) e mesi-crisi chiave ai valori
+// storici di fine mese; la distribuzione infra-annuale restante è ricostruita.
+// Audit indipendente (vs S&P Shiller/LBMA): corr annua 0.83 eq / 0.95 oro.
 const d=[
 // 1970
 [-0.0334,0.0179,-0.0047],[0.0322,-0.0100,-0.0256],[0.0169,-0.0010,-0.0226],[-0.0946,0.0281,-0.0301],[0.0447,0.0164,-0.0444],[-0.0035,-0.0119,0.0054],

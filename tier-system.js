@@ -285,7 +285,7 @@ const INFO_TEXTS = {
   // ── Stress Test Macro (sezione dinamica) ──
   'info-crisis-stress': {
     title: 'Stress Test su Crisi Storiche',
-    text: 'Applica al portafoglio il percorso mensile esatto delle grandi crisi (1973, 1987, 2000, 2008, 2020…) usando i rendimenti reali, senza approssimazioni. Mostra drawdown massimo, durata e tempo di recupero che avresti vissuto.',
+    text: 'Applica al portafoglio il percorso mensile delle grandi crisi (1973, 1987, 2000, 2008, 2020…): totali annui e mesi-crisi chiave ancorati ai valori storici reali, distribuzione degli altri mesi ricostruita. Mostra drawdown massimo, durata e tempo di recupero stimati.',
   },
 };
 

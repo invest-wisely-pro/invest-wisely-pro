@@ -1,6 +1,7 @@
 // ══════════════════════════════════════════════════════════════
 // HISTORICAL BACKTESTING ENGINE
-// Usa i dati mensili reali HIST_MONTHLY (1970-2024) per simulare
+// Usa la serie mensile HIST_MONTHLY (1970-2024, totali annui reali e
+// mesi-crisi ancorati ai valori storici, infra-annuale ricostruito) per simulare
 // il piano PAC su periodi storici specifici, con correlazioni
 // DINAMICHE: in anni di drawdown > 15% le correlazioni si alzano
 // verso la matrice STRESS (come osservato empiricamente).
