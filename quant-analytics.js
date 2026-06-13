@@ -1244,7 +1244,7 @@ function computeFactorExposure(weights, acKeys) {
 }
 
 // ── Decomposizione del rendimento atteso ───────────────────────────────────
-function decomposeReturn(exposure, weights, acKeys, ter) {
+function decomposeReturn(exposure, weights, acKeys, ter, finCost) {
   const contributions = {
     MKT: exposure.MKT * FACTOR_PREMIA.MKT,
     SMB: exposure.SMB * FACTOR_PREMIA.SMB,
@@ -1256,7 +1256,7 @@ function decomposeReturn(exposure, weights, acKeys, ter) {
   const fromFactors    = Object.values(contributions).reduce((s, v) => s + v, 0);
   const baseline       = FACTOR_PREMIA.RF;
   const totalExplained = baseline + fromFactors;
-  const actualMu       = portfolioMu(weights, acKeys, ter);
+  const actualMu       = portfolioMu(weights, acKeys, ter) - (finCost || 0); // costo finanziamento leva (composite)
   const alpha          = actualMu - totalExplained;
   return { baseline, contributions, alpha, actualMu, fromFactors, totalExplained };
 }
@@ -1311,14 +1311,21 @@ function _portfolioToAssetClasses(portKey, p) {
 // ── Ottiene pesi del portafoglio corrente (custom o predefinito) ──────────
 function _getCurrentPortfolioWeights() {
   if (state.portfolio === 'custom') {
-    const slots = (state.customPortfolio?.slots || [])
+    const raw = (state.customPortfolio?.slots || [])
       .filter(s => s.ac && ASSET_CLASSES[s.ac] && s.pct > 0);
-    if (!slots.length) return null;
-    const total = slots.reduce((s, sl) => s + (+sl.pct || 0), 0);
+    if (!raw.length) return null;
+    // Espandi le asset class composite (Efficient Core) nei componenti atomici:
+    // i compositi NON hanno mu/vol/factor loadings propri, quindi vanno scomposti
+    // o produrrebbero NaN nella decomposizione fattoriale, frontiera e VaR.
+    const exp = (typeof expandCustomSlots === 'function')
+      ? expandCustomSlots(state.customPortfolio.slots)
+      : { slots: raw, total: raw.reduce((s, sl) => s + (+sl.pct || 0), 0), finCostTotal: 0 };
+    const total = exp.slots.reduce((s, sl) => s + (+sl.pct || 0), 0) || 1;
     return {
-      keys:    slots.map(s => s.ac),
-      weights: slots.map(s => (+s.pct || 0) / total),
+      keys:    exp.slots.map(s => s.ac),
+      weights: exp.slots.map(s => (+s.pct || 0) / total),
       label:   'Custom',
+      finCost: exp.finCostTotal || 0,
     };
   }
   const p = PORT[state.portfolio];
@@ -1431,7 +1438,7 @@ function _renderFactorView() {
   }
   const { keys, weights, label } = portfolio;
   const exposure = computeFactorExposure(weights, keys);
-  const decomp   = decomposeReturn(exposure, weights, keys, _efState.ter);
+  const decomp   = decomposeReturn(exposure, weights, keys, _efState.ter, portfolio.finCost || 0);
   const fmt      = v => (v >= 0 ? '+' : '') + (v * 100).toFixed(2) + '%';
   const fmtBeta  = v => (v >= 0 ? '+' : '') + v.toFixed(2);
 
