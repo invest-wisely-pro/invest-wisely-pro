@@ -3187,6 +3187,25 @@ function renderCustomBuilder() {
   const slots = state.customPortfolio.slots;
   const total = slots.reduce((s,sl)=>s+(+sl.pct||0),0);
   const totalOk = Math.abs(total-100)<0.5;
+
+  // Calcola esposizione notional effettiva (composite a leva > 100%)
+  // Un asset isComposite con composite=[{w:0.90},{w:0.60}] ha notional 1.50x
+  // la quota nominale. Es: 15% EC 90/60 = 22.5% esposizione effettiva.
+  let notionalTotal = 0;
+  let hasLeverage = false;
+  for (const sl of slots) {
+    const pct = +sl.pct || 0;
+    if (!pct) continue;
+    const ac = (typeof ASSET_CLASSES !== 'undefined') && ASSET_CLASSES[sl.ac];
+    if (ac && ac.isComposite && Array.isArray(ac.composite)) {
+      const notional = ac.composite.reduce((a, c) => a + c.w, 0);
+      notionalTotal += pct * notional;
+      hasLeverage = true;
+    } else {
+      notionalTotal += pct;
+    }
+  }
+  const notionalOk = notionalTotal <= 100.5;
   const cp = calcCustomParams();
   document.getElementById('portDetailBox').innerHTML = `
     <div style="font-size:12px;color:var(--text2);margin-bottom:6px">Parametri calcolati in tempo reale sulla composizione sotto.</div>
@@ -3217,9 +3236,14 @@ function renderCustomBuilder() {
         <span style="font-size:11px;color:var(--text3);font-family:'DM Mono',monospace">%</span>
         <button class="dbtn" onclick="delCustomSlot(${i})">✕</button>
       </div>`).join('')}</div>
-    <div class="custom-total ${totalOk?'ok':total>0?'warn':'err'}">
-      Totale: ${total.toFixed(1)}% ${totalOk?'✅ OK':total<100?'⚠️ mancano '+(100-total).toFixed(1)+'%':'❌ eccedenza '+(total-100).toFixed(1)+'%'}
+    <div class="custom-total ${totalOk&&notionalOk?'ok':!totalOk?'err':'warn'}">
+      Totale nominale: ${total.toFixed(1)}%
+      ${totalOk?'✅':total<100?'⚠️ mancano '+(100-total).toFixed(1)+'%':'❌ eccedenza '+(total-100).toFixed(1)+'%'}
+      ${hasLeverage ? `&nbsp;|&nbsp; Esposizione notional: <strong>${notionalTotal.toFixed(1)}%</strong> ${notionalOk?'':'<span style="color:var(--red)">⚠️ leva '+(notionalTotal/100).toFixed(2)+'×</span>'}` : ''}
     </div>
+    ${hasLeverage && !notionalOk ? `<div style="font-size:11.5px;color:var(--orange);background:var(--orange-dim);border:1px solid rgba(227,116,0,.3);border-radius:var(--radius-sm);padding:7px 12px;margin-bottom:8px;line-height:1.6">
+      ⚡ <strong>Portafoglio a leva:</strong> la quota nominale ${total.toFixed(0)}% include Efficient Core che opera con esposizione notional ${notionalTotal.toFixed(1)}% (leva ${(notionalTotal/100).toFixed(2)}×). Il simulatore modella correttamente questa leva. Il <strong>backtest storico</strong> e il <strong>Monte Carlo block bootstrap</strong> non sono disponibili — usa il <strong>Monte Carlo GARCH</strong> o il <strong>Simulatore</strong>.
+    </div>` : ''}
     <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">
       <button class="addbtn" style="flex:1;min-width:140px" onclick="addCustomSlot()">+ Aggiungi asset class</button>
       <button class="gbtn a-blue" onclick="normalizeCustom()">⚖️ Normalizza a 100%</button>

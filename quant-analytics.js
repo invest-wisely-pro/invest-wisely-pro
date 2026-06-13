@@ -445,13 +445,33 @@ function getCurrentPortfolioPoint(ter) {
       isCurrent: true,
     };
   }
-  // Custom
+  // Custom — espandi i composite (Efficient Core) nei sottostanti atomici,
+  // altrimenti getCov restituisce NaN (vol undefined) → triangolo sparisce.
   const slots = (state.customPortfolio?.slots||[]).filter(s=>s.ac&&ASSET_CLASSES[s.ac]&&s.pct>0);
   if (!slots.length) return null;
-  const total = slots.reduce((s,sl)=>s+(+sl.pct||0),0);
-  if (total<=0) return null;
-  const keys = slots.map(s=>s.ac);
-  const weights = slots.map(s=>(+s.pct||0)/total);
+  const rawTotal = slots.reduce((s,sl)=>s+(+sl.pct||0),0);
+  if (rawTotal<=0) return null;
+
+  // Espansione: i composite vengono scomposti con pesi notional corretti,
+  // poi normalizzati a somma 1 (come fa expandCustomSlots ma leggero).
+  const expandedMap = {};
+  for (const sl of slots) {
+    const pctNorm = (+sl.pct||0) / rawTotal; // peso normalizzato dello slot
+    const ac = ASSET_CLASSES[sl.ac];
+    if (ac && ac.isComposite && Array.isArray(ac.composite)) {
+      const notional = ac.composite.reduce((a,c) => a + c.w, 0);
+      for (const comp of ac.composite) {
+        expandedMap[comp.ac] = (expandedMap[comp.ac] || 0) + pctNorm * (comp.w / notional);
+      }
+    } else {
+      expandedMap[sl.ac] = (expandedMap[sl.ac] || 0) + pctNorm;
+    }
+  }
+  // Rinormalizza a somma 1 (la leva è già catturata dai pesi > somma originale)
+  const expSum = Object.values(expandedMap).reduce((a,b)=>a+b,0);
+  const keys = Object.keys(expandedMap);
+  const weights = keys.map(k => expandedMap[k] / (expSum||1));
+
   const mu  = portfolioMu(weights, keys, ter);
   const vol = Math.sqrt(Math.max(0, portfolioVar(weights, keys)));
   return { mu, vol, sharpe: (mu-RF_RATE)/(vol||0.001), label:'Il tuo portafoglio', isCurrent:true };
@@ -647,12 +667,32 @@ function _syncEFStateFromSimulator() {
   _efState.ter   = state.ter || 0.20;
   _efState.value = state.w || 100000;
 
-  // Se portafoglio custom, usa le sue asset class
+  // Se portafoglio custom, usa le sue asset class.
+  // I composite (Efficient Core 90/60) vanno espansi nei sottostanti atomici:
+  // ec_glob_core non ha vol/mu propri → computeEfficientFrontier produrrebbe NaN.
   if (state.portfolio === 'custom') {
     const slots = (state.customPortfolio?.slots||[]).filter(s=>s.ac&&ASSET_CLASSES[s.ac]&&s.pct>0);
     if (slots.length) {
-      _efState.assets = slots.map(s=>s.ac);
-      return;
+      const expanded = [];
+      for (const sl of slots) {
+        const ac = ASSET_CLASSES[sl.ac];
+        if (ac && ac.isComposite && Array.isArray(ac.composite)) {
+          // Scomponi: aggiungi i sottostanti (deduplicando)
+          for (const comp of ac.composite) {
+            if (ASSET_CLASSES[comp.ac] && !expanded.includes(comp.ac)) {
+              expanded.push(comp.ac);
+            }
+          }
+        } else {
+          if (!expanded.includes(sl.ac)) expanded.push(sl.ac);
+        }
+      }
+      if (expanded.length >= 2) { _efState.assets = expanded; return; }
+      if (expanded.length === 1) {
+        const partner = expanded[0].startsWith('eq') ? 'ob_glob_agg' : 'eq_sviluppati';
+        _efState.assets = [expanded[0], partner];
+        return;
+      }
     }
   }
   // Per i preset: usa le ASSET CLASS REALI della loro composizione (PRESET_COMPOSITION),
@@ -886,8 +926,28 @@ function _renderVaRView() {
     const slots = (state.customPortfolio?.slots||[]).filter(s=>s.ac&&ASSET_CLASSES[s.ac]&&s.pct>0);
     if (!slots.length) { el.innerHTML='<p style="color:var(--text3)">Configura prima il portafoglio Custom.</p>'; return; }
     const total = slots.reduce((s,sl)=>s+(+sl.pct||0),0);
-    const keys  = slots.map(s=>s.ac);
-    const weights = slots.map(s=>(+s.pct||0)/total);
+    // FIX: espansione composite (Efficient Core 90/60 USA/Globale) nei sottostanti atomici.
+    // ec_us_core / ec_glob_core non sono in AC_KEYS_EF e non hanno vol/mu propri:
+    // passarli direttamente a portfolioVar/portfolioMu produceva covarianza=0 e mu=0
+    // per quella porzione, rendendo VaR/CVaR silenziosamente errati.
+    // Stessa logica di espansione usata in getCurrentPortfolioPoint e _syncEFStateFromSimulator.
+    const expandedMap = {};
+    for (const sl of slots) {
+      const pctNorm = (+sl.pct||0) / total;
+      const ac = ASSET_CLASSES[sl.ac];
+      if (ac && ac.isComposite && Array.isArray(ac.composite)) {
+        const notional = ac.composite.reduce((a,c) => a + c.w, 0);
+        for (const comp of ac.composite) {
+          if (ASSET_CLASSES[comp.ac])
+            expandedMap[comp.ac] = (expandedMap[comp.ac]||0) + pctNorm * (comp.w / notional);
+        }
+      } else {
+        expandedMap[sl.ac] = (expandedMap[sl.ac]||0) + pctNorm;
+      }
+    }
+    const expSum = Object.values(expandedMap).reduce((a,b)=>a+b, 0);
+    const keys    = Object.keys(expandedMap);
+    const weights = keys.map(k => expandedMap[k] / (expSum||1));
     mu  = portfolioMu(weights, keys, 0);
     vol = Math.sqrt(Math.max(0, portfolioVar(weights, keys)));
   } else {
@@ -902,7 +962,12 @@ function _renderVaRView() {
   const horizon = _efState.horizon || 1;
 
   const r = computeVaRCVaR(mu, vol, horizon, value, ter);
-  const portLabel = key==='custom'?'Custom':(PORT[key]?.label||key);
+  // Per i custom con Efficient Core: segnala che il calcolo usa i sottostanti atomici
+  const _hasComposite = key === 'custom' &&
+    (state.customPortfolio?.slots||[]).some(s => { const ac = ASSET_CLASSES[s.ac]; return ac && ac.isComposite; });
+  const portLabel = key==='custom'
+    ? ('Custom' + (_hasComposite ? ' <span style="font-size:10px;color:var(--text3);font-weight:400">(Efficient Core espanso nei sottostanti)</span>' : ''))
+    : (PORT[key]?.label||key);
   // fmt/fmtP: null = "nessuna perdita attesa" (VaR negativo su orizzonte lungo)
   const fmt  = v => v === null ? '<span style="color:var(--green);font-size:11px">nessuna perdita attesa</span>'
                                : v >= 0 ? '−€'+Math.round(v).toLocaleString('it-IT')
@@ -1792,7 +1857,28 @@ function _initOptimizerFromCurrent() {
   // Usa asset class dalla composizione corrente come default
   if (state.portfolio === 'custom') {
     const slots = (state.customPortfolio?.slots || []).filter(s => s.ac && ASSET_CLASSES[s.ac] && s.pct > 0);
-    if (slots.length) _optState.assets = slots.map(s => s.ac);
+    if (slots.length) {
+      // FIX: i composite (Efficient Core 90/60 USA/Globale) non sono in AC_KEYS_EF
+      // e non hanno vol/mu propri → getCov restituisce 0 → matrice degenere → NaN.
+      // Si espandono nei sottostanti atomici (stessa logica di getCurrentPortfolioPoint).
+      const expanded = [];
+      for (const sl of slots) {
+        const ac = ASSET_CLASSES[sl.ac];
+        if (ac && ac.isComposite && Array.isArray(ac.composite)) {
+          for (const comp of ac.composite) {
+            if (ASSET_CLASSES[comp.ac] && !expanded.includes(comp.ac))
+              expanded.push(comp.ac);
+          }
+        } else if (!expanded.includes(sl.ac)) {
+          expanded.push(sl.ac);
+        }
+      }
+      if (expanded.length >= 2) _optState.assets = expanded;
+      else if (expanded.length === 1) {
+        const partner = expanded[0].startsWith('eq') ? 'ob_glob_agg' : 'eq_sviluppati';
+        _optState.assets = [expanded[0], partner];
+      }
+    }
   }
   if (!_optState.assets.length) {
     // Default ragionevole: 4-5 asset diversificati
@@ -1910,6 +1996,10 @@ function _populateOptAssetSelector() {
   if (!sel) return;
   const cats = {};
   for (const [key, ac] of Object.entries(ASSET_CLASSES)) {
+    // FIX: escludi i composite (ec_us_core, ec_glob_core): non sono in AC_KEYS_EF,
+    // non hanno vol/mu propri → getCov=0 → matrice degenere → NaN su tutto.
+    // Nell'optimizer si usano i sottostanti atomici (eq_usa, ob_usa_it, ecc.).
+    if (ac.isComposite) continue;
     if (!cats[ac.cat]) cats[ac.cat] = [];
     cats[ac.cat].push({ key, ac });
   }
