@@ -1897,24 +1897,27 @@ function _renderOptimizerView() {
   if (!el) return;
   _initOptimizerFromCurrent();
 
-  // Blocco se il portafoglio custom contiene composite (Efficient Core):
-  // l'optimizer lavora con somma pesi = 100% e non può modellare esposizione
-  // notional > 100% né il costo di finanziamento della leva. Mostrare risultati
-  // su asset class espansi senza la leva sarebbe fuorviante per l'utente.
+  // Blocco per portafogli a leva: preset Efficient Core / Return Stacking e custom
+  // con composite. L'optimizer lavora con somma pesi = 100% e non può modellare
+  // esposizione notional > 100% né il costo di finanziamento della leva.
+  const _OPT_LEVERAGED_PRESETS = { ec_us_9060: 1, ec_glob_9060: 1, return_stack: 1 };
   const _optCompositeSlots = state.portfolio === 'custom'
     ? (state.customPortfolio?.slots||[])
         .filter(s => { const ac = ASSET_CLASSES[s.ac]; return ac && ac.isComposite && s.pct > 0; })
     : [];
-  if (_optCompositeSlots.length) {
-    const names = _optCompositeSlots.map(s => `<strong>${ASSET_CLASSES[s.ac].label}</strong>`).join(', ');
+  const _optIsLeveraged = !!_OPT_LEVERAGED_PRESETS[state.portfolio] || _optCompositeSlots.length > 0;
+  if (_optIsLeveraged) {
+    const names = _OPT_LEVERAGED_PRESETS[state.portfolio]
+      ? `<strong>${PORT[state.portfolio]?.label || state.portfolio}</strong>`
+      : _optCompositeSlots.map(s => `<strong>${ASSET_CLASSES[s.ac].label}</strong>`).join(', ');
     el.innerHTML = `
       <div style="background:rgba(230,138,0,.07);border:1px solid rgba(230,138,0,.30);border-radius:var(--radius-sm);padding:20px 24px;margin:8px 0;line-height:1.7">
         <div style="font-size:13.5px;font-weight:700;color:#b8860b;margin-bottom:8px">⚡ Optimizer non disponibile per questo portafoglio</div>
         <div style="font-size:12.5px;color:var(--text2);margin-bottom:12px">
-          Il portafoglio custom include ${names}, che opera con <strong>leva implicita</strong>
+          Il portafoglio ${names} opera con <strong>leva implicita</strong>
           (esposizione notional &gt;100%). L'optimizer di Markowitz lavora con pesi che sommano
           al 100% e non può modellare la leva né il suo costo di finanziamento: i risultati
-          sarebbero riferiti ai sottostanti senza leva, un portafoglio diverso da quello che hai costruito.
+          sarebbero riferiti ai sottostanti senza leva, un portafoglio diverso da quello selezionato.
         </div>
         <div style="font-size:12px;color:var(--text3)">
           Usa il <strong>Simulatore</strong> o il <strong>Monte Carlo Avanzato</strong> per analizzare
