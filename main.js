@@ -420,6 +420,27 @@ const ASSET_CLASSES = {
     histCAGR: 0.048, histPeriod: '1970-2024', src: 'Dati storici tassi breve termine (Fed/BCE)',
     desc: 'BOT, T-Bills, fondi monetari, conti deposito. Rendimento = tasso di policy della banca centrale. Volatilità ~2% (include rischio di reinvestimento/variazione tassi: il rendimento atteso cambia ad ogni rinnovo). Rendimento reale spesso negativo in periodi inflattivi. CAGR storico 4.8%/a gonfiato dall\'era dei tassi alti anni \'80. Forward-looking normalizzato ~2.5%/a.',
   },
+  // ══════════════════════════════════════════════════════════════
+  // EFFICIENT CORE (composite) — capital efficiency con leva
+  // Definite come ESPANSIONE di componenti atomiche: il builder le scompone
+  // in azioni+bond, così matrice di correlazione, crash-beta e fiscalità
+  // operano sui sottostanti reali. 'composite'=[{ac,w}] con pesi notional
+  // (sommano >1 per la leva); 'finCost'=costo finanziamento annuo (notional−1)×~RF.
+  // ══════════════════════════════════════════════════════════════
+  ec_us_core: {
+    label: 'Efficient Core 90/60 USA', emoji: '\u26a1', cat: 'eq', isComposite: true,
+    composite: [ { ac: 'eq_usa', w: 0.90 }, { ac: 'ob_usa_it', w: 0.60 } ],
+    finCost: 0.0125, ter: 0.35, fxExp: 0.70,
+    histPeriod: '1970-2024', src: 'WisdomTree NTSX / efficient core',
+    desc: 'Mattoncino capital-efficient: 90% azioni USA + 60% Treasury USA (notional 150%, leva 1,5x). Nel builder si scompone nei due sottostanti, cos\u00ec puoi combinarlo con oro, trend, ex-USA ecc. mantenendo corretti correlazioni e tassazione. Costo di finanziamento ~1,25%/a gi\u00e0 dedotto.',
+  },
+  ec_glob_core: {
+    label: 'Efficient Core 90/60 Globale', emoji: '\u26a1', cat: 'eq', isComposite: true,
+    composite: [ { ac: 'eq_sviluppati', w: 0.90 }, { ac: 'ob_glob_gov', w: 0.60 } ],
+    finCost: 0.0125, ter: 0.40, fxExp: 0.55,
+    histPeriod: '1970-2024', src: 'efficient core globale',
+    desc: 'Come l\'Efficient Core USA ma diversificato globalmente: 90% azioni mercati sviluppati + 60% governativi globali (hedged EUR), notional 150%. Nel builder si scompone nei sottostanti per un calcolo corretto di rischio, correlazioni e fiscalit\u00e0. Costo di finanziamento ~1,25%/a dedotto.',
+  },
 };
 
 // ── Mappa categoria per calcolo correlazioni portafoglio custom ──
@@ -428,6 +449,39 @@ const AC_CAT = (key) => {
   if (!a) return 'other';
   return a.cat || 'other';
 };
+
+// ── Espansione slot composite (Efficient Core) ────────────────────────────────
+// Ritorna { slots, total, finCostTotal }: i composite vengono scomposti nei
+// componenti atomici con pesi NOTIONAL (sommano >1 per la leva, corretto), e
+// il costo di finanziamento della leva viene accumulato per dedurlo da μ.
+function expandCustomSlots(rawSlotsAll) {
+  const rawSlots = (rawSlotsAll || []).filter(s => s.ac && ASSET_CLASSES[s.ac] && s.pct > 0);
+  const total = rawSlots.reduce((s, sl) => s + sl.pct, 0) || 1;
+  const slots = [];
+  let finCostTotal = 0;
+  for (const sl of rawSlots) {
+    const ac = ASSET_CLASSES[sl.ac];
+    if (ac.isComposite && Array.isArray(ac.composite)) {
+      const wSlot = sl.pct / total;
+      const notional = ac.composite.reduce((a, c) => a + c.w, 0);
+      // fxExp del composite: usa il valore AGGREGATO dichiarato (es. 0.70),
+      // non i notional dei componenti (darebbero ~150%, irreale: la gamba a
+      // leva è tipicamente hedged). Ripartito pro-quota sui sotto-slot.
+      const fxAgg = ac.fxExp ?? 0;          // esposizione FX aggregata del composite
+      const wSlotComposite = sl.pct / total; // quota del composite nel portafoglio
+      for (const comp of ac.composite) {
+        // contributo FX assoluto del sotto-slot: la somma sui componenti = fxAgg × wSlotComposite
+        const fxContrib = fxAgg * wSlotComposite * (comp.w / notional);
+        slots.push({ ac: comp.ac, pct: sl.pct * comp.w, fxContrib });
+      }
+      finCostTotal += wSlot * (ac.finCost ?? Math.max(0, notional - 1) * 0.025);
+    } else {
+      slots.push({ ac: sl.ac, pct: sl.pct });
+    }
+  }
+  return { slots, total, finCostTotal };
+}
+
 
 // ── Matrice di correlazione per categoria (empirica, 1970-2024) ───────────────
 // Categorie:
@@ -787,10 +841,12 @@ function planIRR(data, targetIdx) {
 // (riceve il bond rally). La somma è 1.
 function getCrashWeights(port, age) {
   let eq, trendW = 0, carryW = 0, commodW = 0, goldW = 0, cashW = 0;
+  let obExplicitCustom;
   if (port === 'custom') {
     const cp = calcCustomParams();
     eq = cp.eq; trendW = cp.trendW || 0; carryW = cp.carryW || 0;
     commodW = cp.commodW || 0; goldW = cp.goldW || 0; cashW = cp.cashW || 0;
+    obExplicitCustom = cp.ob; // bond notional espanso (include la gamba a leva dei composite)
   } else {
     eq = getEquityWeight(port, age);
     goldW = getGoldWeight(port);
@@ -802,7 +858,7 @@ function getCrashWeights(port, age) {
   // stacking) usa il peso obbligazionario ESPLICITO (es. 0.60 notional), non il
   // residuo 1−eq che collasserebbe la leva. La somma può superare 1: corretto,
   // il crash agisce sulle esposizioni notional.
-  const obExplicit = (port !== 'custom') ? PORT[port]?.ob : undefined;
+  const obExplicit = (port !== 'custom') ? PORT[port]?.ob : obExplicitCustom;
   const defensive = (obExplicit ?? Math.max(0, 1 - eq - trendW - carryW - commodW - goldW - cashW)) + goldW + cashW;
   return { eq, trendW, carryW, commodW, defensive };
 }
@@ -810,8 +866,7 @@ function getCrashWeights(port, age) {
 // ── Calcola parametri blended del portafoglio custom ──────────
 function calcCustomParams() {
   // ── 1. Filtra slot validi e normalizza i pesi ─────────────────
-  const slots = (state.customPortfolio?.slots || []).filter(s => s.ac && ASSET_CLASSES[s.ac] && s.pct > 0);
-  const total = slots.reduce((s, sl) => s + sl.pct, 0) || 1;
+  const { slots, total, finCostTotal } = expandCustomSlots(state.customPortfolio?.slots);
 
   // ── 2. Rendimento atteso ponderato e beta inflazione ──────────
   let mu = 0, inflBeta = 0, eqW = 0, obW = 0, goldW = 0, cashW = 0, terW = 0, fxExpW = 0, otherFullW = 0;
@@ -826,7 +881,13 @@ function calcCustomParams() {
     mu       += w * ac.mu;
     inflBeta += w * ac.inflBeta;
     terW     += w * (ac.ter ?? 0.20);  // TER pesato (ipotesi ETF tipici retail)
-    fxExpW   += w * (ac.fxExp ?? 0);    // esposizione FX pesata (% non-EUR)
+    // esposizione FX pesata: per i sotto-slot di un composite usa la fxExp
+    // aggregata dichiarata (ripartita pro-quota), non quella del componente.
+    if (sl.fxContrib !== undefined) {
+      fxExpW += sl.fxContrib;               // contributo FX assoluto (composite): già pro-quota
+    } else {
+      fxExpW += w * (ac.fxExp ?? 0);
+    }
     if (ac.isEq)        eqW   += w;
     else if (ac.isGold) goldW += w;
     else if (ac.isCash) cashW += w;
@@ -882,7 +943,7 @@ function calcCustomParams() {
   // Modello: ρ(equity, EUR/USD) ≈ 0 nel lungo periodo → varianze si sommano
   const fxHedged = !!state.fxHedge;
   const fxCost = fxHedged ? fxExpW * state.fxHedgeCost : 0;
-  const muNet = mu - fxCost;
+  const muNet = mu - fxCost - finCostTotal; // costo finanziamento leva (composite)
   const fxAddVar = fxHedged ? 0 : Math.pow(fxExpW * state.fxVol, 2);
   const sigmaFx = Math.sqrt(sigma*sigma + fxAddVar);
   const sigmaStressFx = Math.sqrt(sigmaStress*sigmaStress + fxAddVar * 1.5); // FX vol +50% in crisi
@@ -1207,9 +1268,8 @@ function _sanitizeCrashYears(arr, years) {
 function getPortfolioVolDynamic(portKey, age, isStress) {
   if (portKey !== 'custom') return getPortfolioVol(portKey, age);
   if (!isStress) return calcCustomParams().vol;
-  // Ricalcola vol con matrice stress
-  const slots = (state.customPortfolio?.slots || []).filter(s => s.ac && ASSET_CLASSES[s.ac] && s.pct > 0);
-  const total = slots.reduce((s, sl) => s + sl.pct, 0) || 1;
+  // Ricalcola vol con matrice stress (espande le composite come calcCustomParams)
+  const { slots, total } = expandCustomSlots(state.customPortfolio?.slots);
   let variance = 0;
   for (let i = 0; i < slots.length; i++) {
     const si = slots[i]; const ai = ASSET_CLASSES[si.ac]; if (!ai) continue;
@@ -2943,6 +3003,18 @@ function runDecHistorical() {
 
 let chartDec = null;
 function renderDecumulo() {
+  // Badge FX: il decumulo eredita lo stato hedging dal Simulatore (state.fxHedge).
+  // Lo rendiamo ESPLICITO: senza, cambiare l'hedge nel Simulatore altera
+  // silenziosamente i rendimenti del decumulo (stessi input → numeri diversi).
+  (function(){
+    const b = document.getElementById('decFxBadge');
+    if (!b) return;
+    const hedged = !!state.fxHedge;
+    b.innerHTML = hedged
+      ? '\uD83D\uDD12 Copertura valutaria: <strong>attiva</strong> (ereditata dal Simulatore) \u2014 rendimenti leggermente pi\u00F9 bassi e stabili. Cambiala dal tab Simulatore.'
+      : '\uD83D\uDCB1 Copertura valutaria: <strong>non attiva</strong> (ereditata dal Simulatore) \u2014 esposizione al cambio EUR inclusa. Cambiala dal tab Simulatore.';
+    b.style.color = hedged ? 'var(--blue)' : 'var(--text3)';
+  })();
   const dBase = simulateDecumulo('normal'), dBest = simulateDecumulo('best'), dWorst = simulateDecumulo('worst');
   const { years: Y } = decState;
   const endBase = dBase[Y - 1]?.end || 0, endBest = dBest[Y - 1]?.end || 0, endWorst = dWorst[Y - 1]?.end || 0;
@@ -2989,7 +3061,12 @@ function importFromSim() {
   // Niente dispatchEvent: l'oninput dello slider sovrascriverebbe decState col
   // valore troncato, rendendo l'etichetta incoerente. renderDecumulo() qui sotto
   // ricalcola già tutto con il valore importato reale.
-  document.getElementById('sDecStart').value = Math.min(decState.startPortfolio, +document.getElementById('sDecStart').max);
+  const _decSld = document.getElementById('sDecStart');
+  _decSld.value = Math.min(decState.startPortfolio, +_decSld.max);
+  // Sincronizza il campo numerico iniettato (attachNumberBox) col valore PIENO
+  // importato: senza, il box resterebbe al valore precedente e, essendo
+  // bidirezionale, lo rimanderebbe allo slider alla prima interazione.
+  if (_decSld._numBox) _decSld._numBox.value = decState.startPortfolio;
   document.getElementById('lDecStart').textContent = fmt(decState.startPortfolio);
   document.getElementById('importStatus').textContent = `Importato: ${fmtFull(decState.startPortfolio)} (scenario base, età ${state.age + state.years} anni)`;
   renderDecumulo();
@@ -3214,6 +3291,22 @@ function getFxAdjustment(portKey, age) {
   const fxAddVol  = Math.sqrt(fxAddVar);
   return { fxExposure: fxExp, fxHedged: hedged, fxCost, fxAddVol };
 }
+// ── Applica il TER tipico del preset allo slider e a state.ter ────────────────
+// Chiamata quando si cambia portafoglio preset, cosi il costo riflette gli ETF
+// che tipicamente lo replicano (e non resta il TER del portafoglio precedente).
+// Il custom usa syncCustomTer (TER ponderato sugli ETF scelti).
+const PRESET_TER = { "eq100": 0.18, "eq80": 0.18, "eq60": 0.17, "eq50": 0.16, "eq40": 0.15, "eq20": 0.13, "ob100": 0.12, "lifecycle": 0.18, "golden_butterfly": 0.20, "permanent": 0.20, "all_seasons": 0.25, "larry": 0.30, "global_market": 0.22, "ec_us_9060": 0.35, "ec_glob_9060": 0.40, "return_stack": 0.55 };
+function syncPresetTer(portKey) {
+  if (portKey === 'custom') return; // il custom ha il suo sync dedicato
+  const t = PRESET_TER[portKey];
+  if (t === undefined) return;
+  state.ter = t;
+  const sl = document.getElementById('sTer');
+  const lb = document.getElementById('lTer');
+  if (sl) sl.value = t;
+  if (lb) lb.textContent = t.toFixed(2) + '%';
+}
+
 // ── Applica il TER ponderato del portafoglio custom allo slider e a state.ter ──
 // Chiamata ogni volta che la composizione custom cambia, così la simulazione usa
 // sempre il TER coerente con gli ETF selezionati (e non il default 0.20%).
@@ -3532,7 +3625,7 @@ document.getElementById('allocBtns').onclick = e => {
   b.classList.add('a-blue');
   const builder = document.getElementById('customBuilder');
   if (builder) builder.classList.toggle('visible', b.dataset.k === 'custom');
-  if (b.dataset.k === 'custom') syncCustomTer();
+  if (b.dataset.k === 'custom') syncCustomTer(); else syncPresetTer(b.dataset.k);
   updateRetInfo(); updatePortDetailBox(); updateSeqDesc(); render();
 };
 
