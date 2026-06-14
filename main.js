@@ -5200,7 +5200,8 @@ async function generatePDF() {
       narrative(
         `Confronto tra i 4 principali regimi/metodi di calcolo della plusvalenza. Strumento analizzato: ${fsStrum.replace('_', ' ').toUpperCase()}. ` +
         `Aliquota gain: ${fsAliqG.toFixed(1)}%. Aliquota ob.: ${fsAliqOb.toFixed(1)}%. Imposta di bollo: ${fsBollo.toFixed(2)}%/a. ` +
-        (totMinus > 0 ? `Minusvalenze in zainetto: ${fmtFull(totMinus)} (${fsMinus.length} voci).` : 'Nessuna minusvalenza nello zainetto fiscale.')
+        (totMinus > 0 ? `Minusvalenze in zainetto: ${fmtFull(totMinus)} (${fsMinus.length} voci).` : 'Nessuna minusvalenza nello zainetto fiscale.') +
+        ` Nota: questa sezione analizza un singolo strumento (${fsStrum.replace('_', ' ').toUpperCase()}) con la sua aliquota piena ${fsAliqG.toFixed(1)}%, per confrontare i regimi fiscali tra loro. La sezione 8 usa invece l'aliquota composita ${(blendedTaxRate(state.age)*100).toFixed(1)}% pesata sulla composizione del portafoglio (azioni 26% + obbligazioni 12,5%): per questo il netto fiscale qui differisce da quello dell'header. Entrambi sono corretti per il rispettivo scopo — qui il confronto tra regimi, lì la stima fiscale sul portafoglio reale.`
       );
       doc.autoTable({
         startY: y,
