@@ -969,6 +969,9 @@ function _renderVaRView() {
   // Per i custom con Efficient Core: segnala che il calcolo usa i sottostanti atomici
   const _hasComposite = key === 'custom' &&
     (state.customPortfolio?.slots||[]).some(s => { const ac = ASSET_CLASSES[s.ac]; return ac && ac.isComposite; });
+  // Leva presente: preset Efficient Core / Return Stacking, o custom con composite.
+  // Il VaR normalizza i pesi al 100%, quindi sottostima il rischio amplificato dalla leva.
+  const _varLeveraged = _hasComposite || key === 'ec_us_9060' || key === 'ec_glob_9060' || key === 'return_stack';
   const portLabel = key==='custom'
     ? ('Custom' + (_hasComposite ? ' <span style="font-size:10px;color:var(--text3);font-weight:400">(Efficient Core espanso nei sottostanti)</span>' : ''))
     : (PORT[key]?.label||key);
@@ -1002,7 +1005,9 @@ function _renderVaRView() {
       <strong>Orizzonte:</strong> ${horizon} anno/i · <strong>TER:</strong> ${ter.toFixed(2)}% ·
       <strong>Rendimento netto:</strong> ${((mu-ter/100)*100).toFixed(1)}%/a · <strong>Volatilità:</strong> ${(vol*100).toFixed(1)}%/a
     </div>
-
+    ${_varLeveraged ? `<div style="font-size:11.5px;color:var(--orange);background:rgba(230,138,0,.07);border:1px solid rgba(230,138,0,.30);border-radius:var(--radius-sm);padding:8px 12px;margin-bottom:14px;line-height:1.55">
+      ⚡ <strong>Portafoglio a leva:</strong> il VaR/CVaR espande i sottostanti ma normalizza i pesi al 100%, quindi <strong>sottostima il rischio reale</strong> amplificato dalla leva (notional &gt;100%). Per una stima corretta del rischio di questo portafoglio usa il <strong>Simulatore</strong> o il <strong>Monte Carlo Avanzato</strong>, che modellano leva e costo di finanziamento.
+    </div>` : ''}
     <div class="tbl-outer" style="margin-bottom:20px">
       <table>
         <thead>
@@ -1934,8 +1939,7 @@ function _renderOptimizerView() {
         <div style="font-size:12px;color:var(--text3)">
           Usa il <strong>Simulatore</strong> o il <strong>Monte Carlo Avanzato</strong> per analizzare
           questo portafoglio — modellano correttamente la leva e il costo di finanziamento.
-          La <strong>Frontiera Efficiente</strong> e il <strong>VaR/CVaR</strong> in questa scheda
-          funzionano correttamente (espandono i composite nei sottostanti con i pesi notional corretti).
+          Nota: anche la <strong>Frontiera Efficiente</strong> e il <strong>VaR/CVaR</strong> di questa scheda espandono i composite nei sottostanti ma <strong>normalizzano i pesi al 100%</strong>, quindi non riflettono il rischio amplificato dalla leva (notional &gt;100%): per quei portafogli il rischio reale è superiore a quanto mostrato qui. Il riferimento corretto resta il Simulatore.
         </div>
       </div>`;
     return;
