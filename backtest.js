@@ -460,25 +460,34 @@ function simulateBacktest(portKey, startYear, pacMonthly, w0, skipEvents, useCap
   };
 }
 
-// ── Helper: rileva se il portafoglio custom include Trend Following / Carry ──────
-// fat_trend (Managed Futures) e fat_carry_* non hanno serie storica coerente
-// in HIST_MONTHLY (che copre solo azioni/obbligazioni/oro). Senza blocco, questi
-// asset verrebbero simulati implicitamente come obbligazionario (obW = residuo),
-// perdendo completamente il crisis alpha / la decorrelazione che ne giustificano l'uso.
-// Stesso blocco per asset compositi a leva (Efficient Core 90/60 USA/Globale):
-// isComposite+finCost > 0 indica esposizione notional >100%; il backtest storico
-// ignorerebbe la leva e il costo di finanziamento, producendo risultati fuorvianti.
+// ── Helper: rileva se il portafoglio custom include asset senza serie storica mensile ──
+// HIST_MONTHLY copre SOLO tre colonne: azioni sviluppate (MSCI World), obbligazioni
+// aggregate e oro. Qualsiasi asset NON presente come colonna propria in HIST_MONTHLY
+// verrebbe simulato usando come proxy la serie sbagliata (tipicamente col[0] = MSCI World),
+// producendo risultati fuorvianti. Blocco obbligatorio.
+//
+// Asset bloccati per categoria:
+//   'trend'  — Managed Futures/Trend Following (nessuna colonna in HIST_MONTHLY)
+//   'carry'  — Carry bond/FX/commodity (nessuna colonna in HIST_MONTHLY)
+//   'fat'    — Fattori azionari (Value, Momentum, Quality, Low Vol, Small Cap, ecc.):
+//              la serie MSCI World non è la loro storia reale (cicli e crash diversi)
+//
+// Asset bloccati per chiave specifica:
+//   'eq_em'         — Mercati Emergenti (serie storica distinta, non proxy di MSCI World)
+//   'reits'         — Immobiliare Quotato (REITs): HIST_MONTHLY non include una colonna REITs;
+//              verrebbe simulato come azioni sviluppate ignorando il ciclo immobiliare
+//              reale (2007-09 drawdown −68%, correlazione con equity diversa nel tempo)
+//   'eq_small_value'— Azioni Small Cap Value (fattore): cat='eq' ma serie storica propria
+//              (Fama-French SCV) diversa da MSCI World; usarla come proxy MSCI World
+//              ignorerebbe il premio value/size e i cicli specifici del fattore
+//
+// Asset compositi a leva (Efficient Core 90/60 USA/Globale):
+//   isComposite+finCost > 0 → esposizione notional >100%; la leva e il suo costo
+//   verrebbero ignorati nel backtest storico → risultati sistematicamente gonfiati.
 function customPortfolioIsNonBacktestable() {
   if (state.portfolio !== 'custom') return false;
-  // Categorie senza serie storica reale propria: trend following, carry.
-  // Esteso ai fattoriali ('fat') e ai mercati emergenti: nel backtest/bootstrap
-  // userebbero come proxy la serie delle azioni sviluppate (MSCI World), che ha
-  // una storia reale DIVERSA (i fattoriali hanno cicli e crash propri, gli
-  // emergenti un percorso storico distinto). Mostrare quel proxy come se fosse
-  // la storia dell'asset sarebbe fuorviante → blocco, finché non esistono serie reali.
-  // NB: i proxy difendibili restano consentiti (bond di categoria simile, commodities/oro).
   const NON_BT_CATS = new Set(['trend', 'carry', 'fat']);
-  const NON_BT_KEYS = new Set(['eq_em']);
+  const NON_BT_KEYS = new Set(['eq_em', 'reits', 'eq_small_value']);
   return (state.customPortfolio?.slots || []).some(sl => {
     const ac = ASSET_CLASSES[sl.ac];
     if (!ac || !(Number(sl.pct) > 0)) return false;
@@ -513,10 +522,13 @@ function runBacktest() {
     box.style.color = 'var(--orange, #b8860b)';
     const isCustomMF = portKey === 'custom' && customPortfolioIsNonBacktestable();
     box.innerHTML = isCustomMF
-      ? `Il portafoglio custom include <strong>Trend Following / Managed Futures</strong>, <strong>Carry</strong>, <strong>Fattoriali</strong> (Value, Momentum, ecc.), <strong>Mercati Emergenti</strong> o <strong>Efficient Core (leva)</strong>, ` +
-        `asset privi di una serie storica reale propria in questo modello (i dati storici mensili coprono solo azioni sviluppate, obbligazioni e oro). ` +
-        `Per i fattoriali e gli emergenti il backtest userebbe come proxy la serie delle azioni sviluppate — una storia diversa da quella reale dell'asset — producendo risultati fuorvianti. ` +
-        `Usa le schede <strong>Simulatore</strong>, <strong>Monte Carlo</strong> o <strong>Frontiera Efficiente</strong>, che usano i parametri specifici di ogni asset.`
+      ? `Il portafoglio custom include asset <strong>privi di serie storica mensile propria in questo modello</strong>: ` +
+        `<strong>Trend Following / Managed Futures</strong>, <strong>Carry</strong>, <strong>Fattoriali</strong> (Value, Momentum, Small Cap, ecc.), ` +
+        `<strong>Small Cap Value</strong>, <strong>Immobiliare Quotato (REITs)</strong>, <strong>Mercati Emergenti</strong> o <strong>Efficient Core (leva)</strong>. ` +
+        `HIST_MONTHLY contiene solo tre serie: azioni sviluppate (MSCI World), obbligazioni aggregate e oro. ` +
+        `Usare queste come proxy per REITs, Small Cap Value o fattoriali significherebbe simulare una storia diversa da quella reale dell'asset, ` +
+        `producendo risultati fuorvianti. ` +
+        `Usa le schede <strong>Simulatore</strong>, <strong>Monte Carlo</strong> o <strong>Frontiera Efficiente</strong>, che usano i parametri specifici (μ, σ) di ogni asset.`
       : `Il backtest storico non è applicabile a <strong>${lbl}</strong>. ` +
         `Questa strategia usa leva (esposizione &gt;100%) e/o managed futures, ` +
         `asset per cui non esiste una serie storica coerente in questo modello ` +
@@ -714,7 +726,7 @@ function runSequenceRiskStress() {
     document.getElementById('btSeqRiskResults').style.display = 'block';
     document.getElementById('btSeqRiskContext').innerHTML =
       isCustomNonBT
-        ? 'Lo stress test di sequenza non è disponibile per i portafogli custom con Efficient Core (leva), Trend Following o Carry (privi di serie storica coerente).'
+        ? 'Lo stress test di sequenza non è disponibile per portafogli custom con <strong>Small Cap Value</strong>, <strong>REITs</strong>, <strong>Fattoriali</strong>, <strong>Trend Following</strong>, <strong>Carry</strong>, <strong>Mercati Emergenti</strong> o <strong>Efficient Core (leva)</strong>: HIST_MONTHLY non contiene serie mensili proprie per questi asset.'
         : 'Lo stress test di sequenza non è disponibile per i portafogli con leva o managed futures (privi di serie storica coerente).';
     document.getElementById('btSeqRiskCards').innerHTML = '';
     document.getElementById('btSeqRiskNote').innerHTML = '';
@@ -890,10 +902,13 @@ function runAllBacktests() {
     box.style.color = 'var(--orange, #b8860b)';
     const isCustomMF2 = portKey === 'custom' && customPortfolioIsNonBacktestable();
     box.innerHTML = isCustomMF2
-      ? `Il portafoglio custom include <strong>Trend Following / Managed Futures</strong>, <strong>Carry</strong>, <strong>Fattoriali</strong> (Value, Momentum, ecc.), <strong>Mercati Emergenti</strong> o <strong>Efficient Core (leva)</strong>, ` +
-        `asset privi di una serie storica reale propria in questo modello (i dati storici mensili coprono solo azioni sviluppate, obbligazioni e oro). ` +
-        `Per i fattoriali e gli emergenti il backtest userebbe come proxy la serie delle azioni sviluppate — una storia diversa da quella reale dell'asset — producendo risultati fuorvianti. ` +
-        `Usa le schede <strong>Simulatore</strong>, <strong>Monte Carlo</strong> o <strong>Frontiera Efficiente</strong>, che usano i parametri specifici di ogni asset.`
+      ? `Il portafoglio custom include asset <strong>privi di serie storica mensile propria in questo modello</strong>: ` +
+        `<strong>Trend Following / Managed Futures</strong>, <strong>Carry</strong>, <strong>Fattoriali</strong> (Value, Momentum, Small Cap, ecc.), ` +
+        `<strong>Small Cap Value</strong>, <strong>Immobiliare Quotato (REITs)</strong>, <strong>Mercati Emergenti</strong> o <strong>Efficient Core (leva)</strong>. ` +
+        `HIST_MONTHLY contiene solo tre serie: azioni sviluppate (MSCI World), obbligazioni aggregate e oro. ` +
+        `Usare queste come proxy per REITs, Small Cap Value o fattoriali significherebbe simulare una storia diversa da quella reale dell'asset, ` +
+        `producendo risultati fuorvianti. ` +
+        `Usa le schede <strong>Simulatore</strong>, <strong>Monte Carlo</strong> o <strong>Frontiera Efficiente</strong>, che usano i parametri specifici (μ, σ) di ogni asset.`
       : `Il backtest storico non è applicabile a <strong>${lbl}</strong>: ` +
         `usa leva e/o managed futures, asset senza serie storica coerente in questo modello. ` +
         `Usa le schede <strong>Simulatore</strong>, <strong>Monte Carlo</strong> o <strong>Frontiera Efficiente</strong>.`;

@@ -2809,13 +2809,15 @@ function runDecumuloHistorical() {
   const terRateM = ter / 100 / 12;
 
   // Gate: i preset con leva / managed futures (efficient core, return stacking) e i
-  // custom con trend/carry non hanno serie storica coerente in HIST_MONTHLY (solo
-  // azioni/obbligazioni/oro). Simularli falserebbe rischio e decorrelazione.
+  // custom con asset senza serie storica propria in HIST_MONTHLY non sono backtestabili.
+  // HIST_MONTHLY contiene solo 3 colonne: azioni sviluppate (MSCI World), obbligazioni
+  // aggregate e oro. REITs, Small Cap Value, fattoriali, trend/carry, emergenti e
+  // asset a leva verrebbero simulati con proxy scorretti → risultati fuorvianti.
   const DEC_HIST_SKIP = { ec_us_9060: 1, ec_glob_9060: 1, return_stack: 1 };
   const customNonBT = port === 'custom' && typeof customPortfolioIsNonBacktestable === 'function' && customPortfolioIsNonBacktestable();
   if (DEC_HIST_SKIP[port] || customNonBT) {
     const lbl = (typeof getPortLabel === 'function') ? getPortLabel(port) : port;
-    const err = new Error(`Backtest storico non disponibile per "${lbl}": i portafogli con leva (efficient core, return stacking) o con trend following / carry non hanno una serie storica coerente nel dataset 1970-2024 (azioni/obbligazioni/oro). Usa il Monte Carlo Avanzato con un modello parametrico.`);
+    const err = new Error(`Backtest storico non disponibile per "${lbl}": HIST_MONTHLY contiene solo azioni sviluppate (MSCI World), obbligazioni e oro. I portafogli con REITs, Small Cap Value, Fattoriali, Trend Following, Carry, Mercati Emergenti, Efficient Core (leva) o Return Stacking non hanno serie storica mensile propria — simularli userebbe proxy scorretti. Usa il Monte Carlo Avanzato con modello parametrico (Gaussiano, GARCH o Regime-Switching).`);
     err.decHistBlocked = true;
     throw err;
   }

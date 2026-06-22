@@ -350,9 +350,10 @@ function runAdvancedMC() {
       // il Block Bootstrap li modellerebbe come mix az/obbl/oro ignorando leva e
       // trend. Per questi, se è selezionato 'bootstrap', si ricade su GARCH
       // (parametrico, che usa il rendimento/vol corretti del portafoglio).
-      // Stessa cosa per il portafoglio custom che include Trend Following / Carry
-      // o asset compositi a leva (Efficient Core 90/60): fat_trend, fat_carry_bond,
-      // fat_carry_fx, ec_us_core, ec_glob_core non hanno serie in HIST_MONTHLY.
+      // Stessa cosa per il portafoglio custom che include asset senza colonna propria
+      // in HIST_MONTHLY: Trend Following, Carry, Fattoriali (cat='fat'), REITs,
+      // Small Cap Value (eq_small_value), Mercati Emergenti, o asset compositi a leva.
+      // customPortfolioIsNonBacktestable() copre tutti questi casi.
       const LEVERAGED = { ec_us_9060: 1, ec_glob_9060: 1, return_stack: 1 };
       const isCustomWithMF = portfolio === 'custom' &&
         (typeof customPortfolioIsNonBacktestable === 'function') &&
@@ -362,7 +363,7 @@ function runAdvancedMC() {
       if ((model === 'bootstrap' || model === 'bootstrap5y') && (LEVERAGED[portfolio] || isCustomWithMF)) {
         model = 'garch';
         modelFallbackNote = isCustomWithMF
-          ? 'Il portafoglio custom include Trend Following / Managed Futures, Carry o Efficient Core (leva): il Block Bootstrap storico non dispone di serie storiche coerenti per questi asset. Usato il modello GARCH(1,1) parametrico, che modella correttamente rendimento e volatilità del portafoglio custom.'
+          ? 'Il portafoglio custom include asset senza serie storica mensile propria in HIST_MONTHLY (Small Cap Value, REITs, Fattoriali, Trend Following, Carry, Mercati Emergenti o Efficient Core a leva): il Block Bootstrap userebbe proxy scorretti. Usato il modello GARCH(1,1) parametrico, che usa correttamente μ e σ specifici di ogni asset.'
           : 'Il Block Bootstrap storico non è applicabile ai portafogli con leva / managed futures: usato il modello GARCH(1,1) parametrico.';
       }
       const terRate = ter/100;
@@ -758,19 +759,29 @@ function renderAdvMCComparison() {
           const pb=RS.pBearBull/(1-RS.pBullBull+RS.pBearBull);
           const rsE=pb*(eqW*RS.bull.mu+(1-eqW)*0.0025)+(1-pb)*(eqW*RS.bear.mu+(1-eqW)*0.0025);
           r=annR*Math.pow(1+(ptm-rsE),12)-1;
-        } else { // bootstrap
-          const goldW_b = getGoldWeight(state.portfolio);
-          const cashW_b = getCashWeight(state.portfolio);
-          const obW_b   = Math.max(0, 1 - eqW - goldW_b - cashW_b);
-          const n_hist = HIST_MONTHLY.length;
-          const startIdx = Math.floor(Math.random() * (n_hist - 11));
-          let annR = 1;
-          for (let m = 0; m < 12; m++) {
-            const row = calibrateHistRow(HIST_MONTHLY[startIdx + m]);
-            annR *= (1 + eqW * row[0] + obW_b * row[1] + goldW_b * row[2] + cashW_b * 0.0025);
+        } else { // bootstrap / bootstrap5y — fallback a GARCH se asset senza colonna HIST_MONTHLY
+          const _LEVERAGED_COMP = { ec_us_9060:1, ec_glob_9060:1, return_stack:1 };
+          const _isNonBT = _LEVERAGED_COMP[state.portfolio] ||
+            (state.portfolio === 'custom' &&
+             typeof customPortfolioIsNonBacktestable === 'function' &&
+             customPortfolioIsNonBacktestable());
+          if (_isNonBT) {
+            // Fallback gaussiano: usa μ e σ del portafoglio, ignorando HIST_MONTHLY
+            r = mu + 0.5*vol*vol + vol*randn_bm();
+          } else {
+            const goldW_b = getGoldWeight(state.portfolio);
+            const cashW_b = getCashWeight(state.portfolio);
+            const obW_b   = Math.max(0, 1 - eqW - goldW_b - cashW_b);
+            const n_hist = HIST_MONTHLY.length;
+            const startIdx = Math.floor(Math.random() * (n_hist - 11));
+            let annR = 1;
+            for (let m = 0; m < 12; m++) {
+              const row = calibrateHistRow(HIST_MONTHLY[startIdx + m]);
+              annR *= (1 + eqW * row[0] + obW_b * row[1] + goldW_b * row[2] + cashW_b * 0.0025);
+            }
+            const histMean_b = calcHistMean(eqW, goldW_b, obW_b, cashW_b);
+            r = annR * (1 + mu) / (1 + histMean_b) - 1;
           }
-          const histMean_b = calcHistMean(eqW, goldW_b, obW_b, cashW_b);
-          r = annR * (1 + mu) / (1 + histMean_b) - 1;
         }
         r-=terRate;
         const midW=cW+(annPac+pic-exp)/2; cW+=annPac+pic-exp+midW*r; ts[y].push(Math.max(0,cW));
