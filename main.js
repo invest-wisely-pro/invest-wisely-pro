@@ -112,6 +112,13 @@ const PORT = {
     label: '📐 Larry Portfolio',
     desc: 'Ideato da Larry Swedroe. Alta concentrazione su fattori di rischio accademici (small cap value, emerging). Composizione: 15% US Small Cap Value, 7.5% Intl Small Cap Value, 7.5% Emerging Markets, 70% Ob. Breve/Medio Termine. L\'idea: concentrare il rischio solo sull\'azionario ad alto rendimento atteso (small cap value, emerging) ammortizzato da bond a bassa duration. Volatilità portafoglio calcolata ~7.5%/a. Rendimento atteso ~5.8%/a. Beta inflazione calcolato ≈ −0.02: il contributo del bond breve (tassi flottanti) è quasi neutralizzato dalla quota azionaria value.',
     best: .073, normal: .058, worst: .030, vol: .075,
+    // NB: 'normal' (5.8%) è una stima FORWARD-LOOKING conservativa, NON il CAGR storico.
+    // Il CAGR realizzato 1979-2024 con le serie reali (Small Value + Emerging) è ~7.6%,
+    // ma quel periodo è stato eccezionale per il fattore value: proiettarlo nel decumulo
+    // sarebbe imprudente. Lo sconto forward (~1.8pt) è coerente con TUTTI gli altri preset
+    // (eq60 −3.3pt, golden_butterfly −2.8pt, permanent −2.1pt). NON allineare al CAGR
+    // storico: i percorsi che usano le serie reali sono backtest e sequence risk; il
+    // decumulo è parametrico e DEVE restare forward-looking.
     eq: .30, ob: .70, gold: 0, cash: 0,
     realRet: .038, inflBeta: -0.02, fxExp: 0.29, // 30%eq*0.85 + 70%ob*0.05
     breakdown: {
@@ -211,7 +218,7 @@ const ASSET_CLASSES = {
   eq_em: {
     label: 'Azioni Mercati Emergenti', emoji: '🌏', cat: 'eq', isEq: true,
     mu: 0.078, vol: 0.225, inflBeta: 0.35, ter: 0.2, fxExp: 1.0,
-    histCAGR: 0.098, histPeriod: '1988-2024', src: 'DMS Yearbook 2024',
+    histCAGR: 0.098, histPeriod: '1988-2024', src: 'Fama-French Emerging Markets (1989-2024), EUR',
     desc: 'Cina, India, Brasile, Taiwan, Corea del Sud e altri mercati in sviluppo. CAGR dal 1988: ~9.8%/a. Alta volatilità (σ≈22%) e rischio politico/valutario. Premio di crescita economica parzialmente eroso da perdite da valuta e governance societaria più debole.',
   },
   eq_small_value: {
@@ -223,7 +230,7 @@ const ASSET_CLASSES = {
   reits: {
     label: 'Immobiliare Quotato (REITs)', emoji: '🏢', cat: 'eq', isEq: true,
     mu: 0.065, vol: 0.175, inflBeta: 0.20, ter: 0.4, fxExp: 0.8,
-    histCAGR: 0.112, histPeriod: '1972-2024', src: 'Dati storici mercato immobiliare quotato',
+    histCAGR: 0.112, histPeriod: '1972-2024', src: 'FTSE Nareit All Equity REITs (1972-2024), EUR',
     desc: 'Fondi immobiliari quotati su borsa. CAGR 1972-2024: ~11.2%/a. Obbligo di distribuzione ≥90% degli utili → elevata cedola. Copertura parziale dell\'inflazione tramite canoni di affitto indicizzati. Correlazione con azioni ~0.60, parzialmente decorrelante.',
   },
 
@@ -794,6 +801,52 @@ function getCashWeight(port) {
   return m[port] ?? 0;
 }
 
+// Quota Small Cap Value del portafoglio (sottoinsieme della quota azionaria eqW).
+// Questa frazione usa la serie storica REALE (spread Fama-French su mercato) nel
+// bootstrap/backtest, invece del proxy "si comporta come il mercato".
+// Preset: solo 'larry' (15%). Custom: somma degli slot eq_small_value.
+function getSmallValueWeight(port) {
+  if (port === 'custom') return calcCustomParams().scvW || 0;
+  const m = { larry: .15 };
+  return m[port] ?? 0;
+}
+
+// Quota Momentum del portafoglio (sottoinsieme della quota azionaria eqW).
+// Usa il contributo storico REALE β·WML (Fama-French) invece del proxy di mercato.
+// Nessun preset usa il fattore Momentum: solo portafogli custom (slot fat_momentum).
+function getMomentumWeight(port) {
+  if (port === 'custom') return calcCustomParams().momW || 0;
+  return 0;
+}
+
+// Quota REITs del portafoglio (sottoinsieme di eqW). Usa la serie di rendimento
+// REITS reale (asset class con ciclo proprio), non un contributo sul mercato.
+// Nessun preset usa REITs come asset dedicato: solo portafogli custom.
+function getReitsWeight(port) {
+  if (port === 'custom') return calcCustomParams().reitsW || 0;
+  return 0;
+}
+
+// Quota Mercati Emergenti del portafoglio (sottoinsieme di eqW). Usa la serie di
+// rendimento EM reale (asset class con dinamica propria), non un contributo sul mercato.
+// Nessun preset usa EM come asset dedicato: solo portafogli custom.
+function getEmWeight(port) {
+  if (port === 'custom') return calcCustomParams().emW || 0;
+  // Il Larry Portfolio include 7,5% di Mercati Emergenti: usa la serie reale (come lo
+  // Small Value 15%), non il proxy del mercato sviluppato.
+  const m = { larry: .075 };
+  return m[port] ?? 0;
+}
+
+// Quote dei fattori Fama-French 5 (valore/qualità/investment/size), sottoinsiemi di eqW.
+// Ritorna un oggetto {fat_valore, fat_qualita, fat_investment, fat_size}; tutti 0 fuori dal custom.
+// Nessun preset usa questi fattori: solo portafogli custom.
+function getFactorWeights(port) {
+  const empty = { fat_valore: 0, fat_qualita: 0, fat_investment: 0, fat_size: 0, fat_low_vol: 0 };
+  if (port === 'custom') return calcCustomParams().ff5W || empty;
+  return empty;
+}
+
 // ── Beta di crash per categoria di asset (sequence risk) ──────────────────────
 // Quanto ciascuna categoria si muove durante un crash AZIONARIO severo, espresso
 // come frazione del crollo azionario (1.0 = crolla come le azioni; 0 = neutro;
@@ -886,6 +939,12 @@ function calcCustomParams() {
   // otherFullW: servono SOLO per modellare il comportamento in crisi (crash beta),
   // non alterano la classificazione fiscale (otherFullW resta invariato).
   let trendW = 0, carryW = 0, commodW = 0, commCarryW = 0;
+  let scvW = 0; // quota Small Cap Value (sottoinsieme di eqW): usa serie storica reale (spread su mercato)
+  let momW = 0; // quota Momentum (sottoinsieme di eqW): usa contributo reale β·WML su mercato
+  let reitsW = 0; // quota REITs (sottoinsieme di eqW): usa serie di rendimento REITS propria (non spread)
+  let emW = 0; // quota Mercati Emergenti (sottoinsieme di eqW): usa serie di rendimento EM propria
+  // Quote dei fattori Fama-French 5 (sottoinsiemi di eqW): usano contributi reali β·fattore.
+  const ff5W = { fat_valore: 0, fat_qualita: 0, fat_investment: 0, fat_size: 0, fat_low_vol: 0 };
   for (const sl of slots) {
     const ac = ASSET_CLASSES[sl.ac];
     if (!ac) continue;
@@ -911,6 +970,24 @@ function calcCustomParams() {
     else if (ac.isCash) cashW += w;
     else if (ac.cat === 'ob_usa' || ac.cat === 'ob_eu' || ac.cat === 'ob_glob') obW += w; // obblig. governative → 12,5%
     else                otherFullW += w;          // trend/carry/commodities/reit/factor → 26% (redditi diversi)
+    // Small Cap Value: sottoinsieme di eqW (resta in eqW per fisco/categoria),
+    // tracciato a parte per usare la serie storica reale nel bootstrap/backtest.
+    if (sl.ac === 'eq_small_value') scvW += w;
+    if (sl.ac === 'fat_momentum') momW += w;
+    if (sl.ac === 'reits') reitsW += w;
+    if (sl.ac === 'eq_em') emW += w;
+    if (ff5W.hasOwnProperty(sl.ac)) ff5W[sl.ac] += w;
+    // Multi-Fattore: composizione VIVA in 5 fattori reali equipesati (Val+Mom+Qual+LowVol+CMA).
+    // Espanso qui invece di avere una serie propria, così resta sempre coerente coi
+    // singoli fattori (qualunque ricalibrazione futura si propaga automaticamente).
+    if (sl.ac === 'fat_multifat') {
+      const e = w / 5;
+      momW += e;                    // Momentum
+      ff5W.fat_valore     += e;     // Valore
+      ff5W.fat_qualita    += e;     // Qualità
+      ff5W.fat_low_vol    += e;     // Bassa Volatilità
+      ff5W.fat_investment += e;     // Investment (CMA)
+    }
     // Categorizzazione per crash beta (non altera eqW/obW/otherFullW)
     if (ac.cat === 'trend')      trendW  += w;
     else if (sl.ac === 'fat_carry_comm') commCarryW += w; // commodity carry: regge nei risk-off (beta crash basso)
@@ -980,6 +1057,11 @@ function calcCustomParams() {
     eq:   eqW, ob: obW2, gold: goldW, cash: cashW,
     goldW, cashW, otherFullW,
     trendW, carryW, commodW, commCarryW,        // pesi per categoria (modellazione crash/sequence risk)
+    scvW,                                        // quota Small Cap Value (serie storica reale)
+    momW,                                        // quota Momentum (contributo reale β·WML)
+    reitsW,                                      // quota REITs (serie di rendimento propria)
+    emW,                                         // quota Mercati Emergenti (serie propria)
+    ff5W,                                        // quote fattori FF5 (valore/qualità/investment/size)
     realRet:  Math.max(0, muNet - 0.021),
     inflBeta,
     ter:  terW,                    // TER pesato suggerito (ETF tipici)
