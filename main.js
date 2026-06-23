@@ -868,6 +868,70 @@ function getFactorWeights(port) {
 // sono più trattati come rifugi) senza sovrastimare il danno né creare fragilità.
 const CRASH_BETA = { commodity: 0.35, carry: 0.45, trend: -0.20, commCarry: 0.10 };
 
+// ── Beta di crash specifici per fattore/asset class (sequence risk) ───────────
+// Calibrati su evidenza storica reale (FF/NAREIT/AQR 1979-2024, EUR).
+// Esprimono quante volte il β-azionario generico (1.0) subisce quel segmento.
+//   REITs       1.15  → crisi immobiliare 2008: −52% vs −45% mercato; crisi di liquidità
+//   EM          1.20  → crisi asiatica '97, 2008: più volatili e meno liquidi
+//   SCV         1.15  → small cap illiquide, spread bid/ask esplodono in crisi
+//   Momentum    0.75  → regge in crash brusco; MA soffre momentum crash nel rimbalzo
+//                        (viene gestito come "meno difensivo del valore atteso")
+//   Low Vol     0.55  → difensivo certificato: β_mkt=0.70 per costruzione
+//   Qualità     0.65  → bilanci solidi, cash flow stabili → scudo parziale
+//   Valore      1.05  → value trap nei crash; correlato a ciclo economico
+//   Size (SMB)  1.10  → small cap, stesso razionale di SCV senza il value tilt
+//   Investment  0.90  → CMA: aziende conservative, leggermente difensive
+// Nota: i pesi fattoriali sono quote dell'equity totale (cw.eq). La formula
+// sottrae la quota fattoriale dal bucket equity generico e la riassegna col
+// beta corretto, lasciando il totale della quota azionaria invariato.
+const FACTOR_CRASH_BETA = {
+  reits:          1.15,
+  eq_em:          1.20,
+  eq_small_value: 1.15,
+  fat_momentum:   0.75,
+  fat_low_vol:    0.55,
+  fat_qualita:    0.65,
+  fat_valore:     1.05,
+  fat_size:       1.10,
+  fat_investment: 0.90,
+};
+
+// Calcola il crash rate azionario pesato per composizione fattoriale.
+// cw = output di getCrashWeights(); sev = eqCR * severityFactor (già negativo).
+// Restituisce solo la componente azionaria+fattoriale; commodity/carry/trend/bond
+// vengono sommati esternamente come prima.
+function calcFactorCrashRate(cw, sev) {
+  // Quota azionaria generica: togliere le quote fattoriali con beta proprio
+  const scvW   = cw.scvW   || 0;
+  const reitsW = cw.reitsW || 0;
+  const emW    = cw.emW    || 0;
+  const momW   = cw.momW   || 0;
+  const ff5    = cw.ff5W   || {};
+  const valW   = ff5.fat_valore     || 0;
+  const qualW  = ff5.fat_qualita    || 0;
+  const invW   = ff5.fat_investment || 0;
+  const sizeW  = ff5.fat_size       || 0;
+  const lvW    = ff5.fat_low_vol    || 0;
+
+  // Somma di tutte le quote con beta specifico (non devono superare cw.eq)
+  const factorTotal = Math.min(cw.eq,
+    scvW + reitsW + emW + momW + valW + qualW + invW + sizeW + lvW);
+  const genericEqW = Math.max(0, cw.eq - factorTotal);
+
+  return sev * (
+      genericEqW                              * 1.00
+    + scvW   * FACTOR_CRASH_BETA.eq_small_value
+    + reitsW * FACTOR_CRASH_BETA.reits
+    + emW    * FACTOR_CRASH_BETA.eq_em
+    + momW   * FACTOR_CRASH_BETA.fat_momentum
+    + valW   * FACTOR_CRASH_BETA.fat_valore
+    + qualW  * FACTOR_CRASH_BETA.fat_qualita
+    + invW   * FACTOR_CRASH_BETA.fat_investment
+    + sizeW  * FACTOR_CRASH_BETA.fat_size
+    + lvW    * FACTOR_CRASH_BETA.fat_low_vol
+  );
+}
+
 // IRR money-weighted del piano di accumulo fino all'anno targetIdx.
 // data = array di project() con {invested, value}. Flussi: t=0 capitale iniziale,
 // ogni anno il contributo PAC di quell'anno, alla fine il valore del portafoglio.
@@ -1400,14 +1464,16 @@ function project(scenario, withSeq, terOverride = null, portOverride = null) {
     const severityFactor = idx === 0 ? 1.0 : idx === 1 ? 0.65 : 0.45; // diminishing severity
     const hasCrash = getCrashYear(seq.timing, years) >= 0;
     const acw = hasCrash ? getEquityWeight(portKey, age + cy) : 0;
-    // Crash rate per categoria: equity crollo pieno; commodity/carry partecipano
-    // (beta>0); trend fa crisis alpha (beta<0); difensivo (bond/gold/cash) → rally.
+    // Crash rate per categoria: equity con beta fattoriale specifico; commodity/carry
+    // partecipano (beta>0); trend fa crisis alpha (beta<0); difensivo → rally.
+    // calcFactorCrashRate() sostituisce sev*cw.eq con pesi differenziati per asset
+    // (REITs/EM/SCV più profondi; LowVol/Qualità difensivi; Momentum intermedio).
     let crRate;
     if (hasCrash) {
       const cw = getCrashWeights(portKey, age + cy);
       const sev = eqCR * severityFactor;
       crRate =
-          sev * cw.eq
+          calcFactorCrashRate(cw, sev)
         + sev * CRASH_BETA.commodity * cw.commodW
         + sev * CRASH_BETA.carry     * cw.carryW
         + sev * CRASH_BETA.commCarry * (cw.commCarryW || 0)
@@ -1549,11 +1615,11 @@ function runMontecarlo() {
   crashYearsList.forEach((cy, idx) => {
     const sf = idx === 0 ? 1.0 : idx === 1 ? 0.65 : 0.45;
     const cw2 = getEquityWeight(portfolio, age + cy);
-    // Crash rate per categoria (coerente con project)
+    // Crash rate per categoria (coerente con project), con beta fattoriali specifici
     const cwCat = getCrashWeights(portfolio, age + cy);
     const sev2 = eqCR * sf;
     const cr2 =
-        sev2 * cwCat.eq
+        calcFactorCrashRate(cwCat, sev2)
       + sev2 * CRASH_BETA.commodity * cwCat.commodW
       + sev2 * CRASH_BETA.carry     * cwCat.carryW
       + sev2 * CRASH_BETA.commCarry * (cwCat.commCarryW || 0)
@@ -2807,7 +2873,8 @@ function simulateDecumulo(sc) {
       const sf = idx === 0 ? 1.0 : idx === 1 ? 0.65 : 0.45;
       const cw = getCrashWeights(port, decStartAge + cy);
       const sev = eqCRdec * sf;
-      decCrashMap[cy] = sev * cw.eq
+      decCrashMap[cy] =
+          calcFactorCrashRate(cw, sev)
         + sev * CRASH_BETA.commodity * cw.commodW
         + sev * CRASH_BETA.carry     * cw.carryW
         + sev * CRASH_BETA.commCarry * (cw.commCarryW || 0)
