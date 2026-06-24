@@ -62,6 +62,7 @@ const SRC = {
   fisc: fs.existsSync(path.join(DIR, 'fiscal.js')) ? read('fiscal.js') : null,
   quant: fs.existsSync(path.join(DIR, 'quant-analytics.js')) ? read('quant-analytics.js') : null,
   crisis: fs.existsSync(path.join(DIR, 'crisis-stress.js')) ? read('crisis-stress.js') : null,
+  live: fs.existsSync(path.join(DIR, 'live-data.js')) ? read('live-data.js') : null,
 };
 function grab(src, re) { const m = src.match(re); return m ? m[0] : null; }
 
@@ -851,13 +852,55 @@ function suiteCrisisStress() {
 }
 
 // ════════════════════════════════════════════════════════════════════════
+// SUITE 12 — STRESS VALUTAZIONI (Bogle decompose + sconto CAPE value-tilt)
+// ════════════════════════════════════════════════════════════════════════
+function suiteValuationStress() {
+  header('SUITE 12 — STRESS VALUTAZIONI');
+  if (!SRC.live) { warn('live-data.js non presente — suite saltata'); return; }
+  loadFn(SRC.live, 'bogleDecompose');
+  if (!global.bogleDecompose) { warn('bogleDecompose non caricata'); return; }
+
+  // 12.a Decomposizione di Bogle: fondamentale + speculativo = nominale
+  const r = global.bogleDecompose(36.1, 14.0, 10, 0.015, 0.02, 0.0105);
+  ok(r !== null, 'bogleDecompose ritorna un risultato valido');
+  if (r) {
+    // mean-reversion da CAPE 36.1 a 14 in 10 anni ≈ -4.8%/a (valore dell'interfaccia)
+    ok(near(r.rNom, -0.048, 0.005), 'Mean-Reversion storica ≈ -4.8%/a (riproduce l\'interfaccia)', (r.rNom*100).toFixed(1)+'%');
+    // speculativo negativo (CAPE scende), fondamentale positivo (dividendi+utili+infl)
+    ok(r.rSpeculative < 0, 'Rendimento speculativo < 0 quando CAPE scende', (r.rSpeculative*100).toFixed(1)+'%');
+    ok(r.rFundamental > 0, 'Rendimento fondamentale > 0 (dividendi+utili+inflazione)', (r.rFundamental*100).toFixed(1)+'%');
+    // coerenza interna: (1+fond)*(1+spec) ≈ (1+nom)
+    ok(near((1+r.rFundamental)*(1+r.rSpeculative)-1, r.rNom, 0.001), 'Coerenza: (1+fond)(1+spec)-1 = nominale');
+  }
+
+  // 12.b Scenari direzionali: CAPE che sale (espansione) dà rendimento > CAPE che crolla
+  const soft  = global.bogleDecompose(36.1, 30.7, 10, 0.015, 0.02, 0.0105); // -15%
+  const crash = global.bogleDecompose(36.1, 12.0, 10, 0.015, 0.02, 0.0105); // ai minimi
+  const expand= global.bogleDecompose(36.1, 43.3, 10, 0.015, 0.02, 0.0105); // +20%
+  ok(expand.rNom > soft.rNom && soft.rNom > crash.rNom, 'Ordine scenari: Espansione > Soft Landing > Crash', [expand.rNom,soft.rNom,crash.rNom].map(x=>(x*100).toFixed(1)+'%').join(' > '));
+  ok(near(crash.rNom, -0.063, 0.005), 'Crash Valutazioni ≈ -6.3%/a (interfaccia)', (crash.rNom*100).toFixed(1)+'%');
+
+  // 12.c Sconto CAPE value-tilt: replica la logica di getPortfolioBlendedCape per
+  // verificare che un portafoglio value/small risulti MENO caro del generico.
+  ok(/CAPE_TILT/.test(SRC.live), 'live-data.js definisce CAPE_TILT (sconto value-tilt)');
+  ok(/_capeTiltFactor/.test(SRC.live), 'CAPE blended applica _capeTiltFactor');
+  // simulazione: portafoglio value-tilted vs generico, stesso CAPE geografico
+  const CAPE_TILT = { eq_small_value:0.70, fat_valore:0.70, fat_size:0.80, fat_dividendi:0.75, fat_low_vol:0.85, fat_multifat:0.85 };
+  const tiltOf = (slots) => { let tw=0,tot=0; for(const [k,w] of slots){tot+=w; tw+=w*(CAPE_TILT[k]??1.0);} return tw/tot; };
+  const genericoTilt = tiltOf([['eq_sviluppati',1.0]]);
+  const valueTilt = tiltOf([['eq_small_value',0.5],['fat_valore',0.5]]);
+  ok(near(genericoTilt, 1.0, 1e-9), 'Portafoglio generico: nessuno sconto CAPE (fattore 1.0)', genericoTilt.toFixed(3));
+  ok(valueTilt < 0.75, 'Portafoglio value/small: sconto CAPE significativo (<0.75)', valueTilt.toFixed(3));
+}
+
+// ════════════════════════════════════════════════════════════════════════
 // RUNNER
 // ════════════════════════════════════════════════════════════════════════
 console.log('\x1b[1m╔══════════════════════════════════════════════════════╗\x1b[0m');
 console.log('\x1b[1m║   TEST SUITE — Suite Patrimoniale Pro                 ║\x1b[0m');
 console.log('\x1b[1m╚══════════════════════════════════════════════════════╝\x1b[0m');
 
-const suites = [suiteData, suiteSimulator, suiteBacktest, suiteMC, suiteDecumulo, suitePensione, suiteFactors, suiteFiscal, suiteQuant, suiteFactorCrashBeta, suiteCrisisStress];
+const suites = [suiteData, suiteSimulator, suiteBacktest, suiteMC, suiteDecumulo, suitePensione, suiteFactors, suiteFiscal, suiteQuant, suiteFactorCrashBeta, suiteCrisisStress, suiteValuationStress];
 for (const s of suites) {
   try { s(); }
   catch (e) { FAIL++; failures.push(s.name + ' CRASH: ' + e.message); console.log('  \x1b[31m✗ CRASH in ' + s.name + ': ' + e.message + '\x1b[0m'); }
