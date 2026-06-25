@@ -698,7 +698,7 @@
     <div class="pblock"><div class="plabel"><span>PAC mensile (base)</span><span class="pval" id="lP">€0/m</span></div><input type="range" id="sP" min="0" max="15000" step="50" value="0"><div class="range-hints"><span>€0</span><span>€15.000</span></div></div>
     <div class="pblock"><div class="plabel"><span>Età iniziale</span><span class="pval" id="lA">0 anni</span></div><input type="range" id="sA" min="0" max="80" step="1" value="0"><div class="range-hints"><span>0</span><span>80</span></div></div>
     <div class="pblock"><div class="plabel"><span>Orizzonte temporale</span><span class="pval" id="lY">35 anni</span></div><input type="range" id="sY" min="1" max="50" step="1" value="35"><div class="range-hints"><span>1 anno</span><span>50 anni</span></div></div>
-    <div class="pblock"><div class="plabel"><span class="opt-tooltip-wrap">💎 Soglia Optionality <span class="opt-tooltip-icon" tabindex="0">?<span class="opt-tooltip-bubble"><strong style="color:var(--blue)">Cos'è la Soglia di Optionality?</strong><br>Livello patrimoniale a cui il portafoglio ti dà <em>opzioni di vita reali</em> — part-time, sabbatico, cambio carriera — prima della libertà finanziaria totale (FIRE). Distinta dal FIRE (100% copertura): questa è il punto di <strong>"abbastanza per avere scelta"</strong>. Il grafico mostra la linea tratteggiata per vedere quando ogni scenario la raggiunge.</span></span></span><span class="pval" id="lO">€450.000</span></div><input type="range" id="sO" min="50000" max="3000000" step="25000" value="450000"><div class="range-hints"><span>€50k</span><span>€3M</span></div></div>
+    <div class="pblock"><div class="plabel"><span class="opt-tooltip-wrap">💎 Soglia Optionality <span class="opt-tooltip-icon">?<span class="opt-tooltip-bubble"><strong style="color:var(--blue)">Cos'è la Soglia di Optionality?</strong><br>Livello patrimoniale a cui il portafoglio ti dà <em>opzioni di vita reali</em> — part-time, sabbatico, cambio carriera — prima della libertà finanziaria totale (FIRE). Distinta dal FIRE (100% copertura): questa è il punto di <strong>"abbastanza per avere scelta"</strong>. Il grafico mostra la linea tratteggiata per vedere quando ogni scenario la raggiunge.</span></span></span><span class="pval" id="lO">€450.000</span></div><input type="range" id="sO" min="50000" max="3000000" step="25000" value="450000"><div class="range-hints"><span>€50k</span><span>€3M</span></div></div>
     <div class="pblock"><div class="plabel"><span>TER ETF <span class="ter-badge">💸 costo fondo</span></span><span class="pval" id="lTer">0.20%</span></div><input type="range" id="sTer" min="0" max="2.0" step="0.05" value="0.20"><div class="range-hints"><span>0%</span><span>2.0%</span></div></div>
     <div class="pblock"><div class="plabel"><span>Tasse Azionario</span><span class="pval" id="lTeq">26.0%</span></div><input type="range" id="sTeq" min="0" max="40" step="0.5" value="26.0"><div class="range-hints"><span>0%</span><span>40%</span></div></div>
     <div class="pblock"><div class="plabel"><span>Tasse Obbligaz. (Gov.)</span><span class="pval" id="lTob">12.5%</span></div><input type="range" id="sTob" min="0" max="40" step="0.5" value="12.5"><div class="range-hints"><span>0%</span><span>40%</span></div></div>
@@ -1906,6 +1906,61 @@
 <script src="pro-features.js"></script>
 <script src="quant-analytics.js"></script>
 <script src="tier-system.js"></script>
+<script>
+/* ── InfoHelper tooltip: mobile tap fix (Chrome Android) ── */
+(function() {
+  var active = null;
+
+  function closeActive() {
+    if (active) {
+      active.classList.remove('tooltip-active');
+      active = null;
+    }
+  }
+
+  function openIcon(icon) {
+    if (active && active !== icon) closeActive();
+    icon.classList.add('tooltip-active');
+    active = icon;
+  }
+
+  document.addEventListener('touchstart', function(e) {
+    var icon = e.target.closest('.opt-tooltip-icon');
+    if (icon) {
+      e.preventDefault();
+      if (active === icon) {
+        closeActive();
+      } else {
+        openIcon(icon);
+      }
+    } else {
+      closeActive();
+    }
+  }, { passive: false });
+
+  document.addEventListener('click', function(e) {
+    if (e.target.closest('.opt-tooltip-icon')) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+  }, true);
+
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') { closeActive(); return; }
+    if (e.key === 'Enter' || e.key === ' ') {
+      var icon = document.activeElement && document.activeElement.closest
+        ? document.activeElement.closest('.opt-tooltip-icon') 
+        : null;
+      if (!icon && document.activeElement && document.activeElement.classList.contains('opt-tooltip-icon'))
+        icon = document.activeElement;
+      if (icon) {
+        e.preventDefault();
+        active === icon ? closeActive() : openIcon(icon);
+      }
+    }
+  });
+})();
+</script>
 
 </body>
 </html>
