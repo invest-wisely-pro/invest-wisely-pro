@@ -801,6 +801,8 @@
 
 <div class="ter-drag-bar"><div style="font-size:11px;color:var(--text3);font-weight:600;text-transform:uppercase;font-family:'DM Mono',monospace;white-space:nowrap">💸 TER Drag</div><div id="terDragContent" style="font-size:13px;color:var(--text2);flex:1">—</div></div>
 
+<details class="adv-section-wrap">
+<summary class="adv-section-summary"><svg class="adv-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg><svg class="sec-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1Z"/><path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8"/><path d="M12 17.5v-11"/></svg><span>Liquidazione Fiscale & Rendita SWR</span><span class="adv-badge">Avanzato</span></summary>
 <div class="sec liq-box" style="margin-bottom:10px">
   <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px">
     <div><div class="sec-label" data-info-id="info-liquidazione" style="margin-bottom:4px;color:var(--blue)">Liquidazione Fiscale Finale (Nominale)</div><div style="font-size:12.5px;color:var(--text2)">Capital Gain a fine periodo — età <strong id="liqAge">—</strong>.</div></div>
@@ -809,9 +811,11 @@
   <div id="liqData" style="display:none;margin-top:18px;border-top:1px solid rgba(26,115,232,.2);padding-top:18px"></div>
 </div>
 
-<div class="sec" style="margin-bottom:10px"><div class="sec-label" data-info-id="info-swr">Rendita Sostenibile — SWR (Nominale)</div><div id="swrData">—</div></div>
+<div class="sec" style="margin-bottom:10px"><div class="sec-label" data-info-id="info-swr">Rendita Sostenibile — SWR (Nominale)</div><div id="swrData">—</div></div></details>
 
 <!-- INFLAZIONE AVANZATA -->
+<details class="adv-section-wrap">
+<summary class="adv-section-summary"><svg class="adv-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg><svg class="sec-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v16a2 2 0 0 0 2 2h16"/><path d="m19 9-5 5-4-4-3 3"/></svg><span>Inflazione Avanzata & Capitale vs Plusvalenza</span><span class="adv-badge">Avanzato</span></summary>
 <div class="infl-box">
   <div class="sec-label" data-info-id="info-inflazione" style="color:#e65100;margin-bottom:8px">🌡️ Modulo Inflazione Avanzato — Nominale → Reale con Correlazione Asset</div>
   <div style="font-size:12.5px;color:#795548;margin-bottom:12px;line-height:1.6">
@@ -840,6 +844,8 @@
   <div class="bar-stats" id="barStats"></div>
 </div>
 
+</details><details class="adv-section-wrap">
+<summary class="adv-section-summary"><svg class="adv-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg><svg class="sec-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg><span>Rischio di Sequenza & Rimbalzo</span><span class="adv-badge">Avanzato</span></summary>
 <div class="sec">
   <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:16px">
     <div class="sec-label" data-info-id="info-sequenza" style="margin-bottom:0">Rischio di Sequenza &amp; Rimbalzo</div>
@@ -870,8 +876,10 @@
     <div class="adv-desc" id="seqDesc"></div>
     <div id="multiCrashInfo" style="display:none;margin-top:8px;padding:10px 14px;background:var(--purple-dim);border:1px solid rgba(147,52,230,.25);border-radius:var(--radius-sm);font-size:12.5px;color:var(--purple);line-height:1.6"></div>
   </div>
-</div>
+</div></details>
 
+<details class="adv-section-wrap">
+<summary class="adv-section-summary"><svg class="adv-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg><svg class="sec-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-2.48a2 2 0 0 0-1.93 1.46l-2.35 8.36a.25.25 0 0 1-.48 0L9.24 2.18a.25.25 0 0 0-.48 0l-2.35 8.36A2 2 0 0 1 4.49 12H2"/></svg><span>Monte Carlo 1.000 Scenari</span><span class="adv-badge">Avanzato</span></summary>
 <div class="sec">
   <div class="sec-label" data-info-id="info-mc-fan">Monte Carlo 1.000 Scenari (Fan Percentili — Lordo Nominale)</div>
   <div id="mcDesc" style="font-size:12.5px;color:var(--text2);line-height:1.5;margin-bottom:12px"></div>
@@ -885,8 +893,10 @@
     <div class="mc-box"><div class="mc-lbl">Media</div><div class="mc-val" id="mcMean" style="color:var(--blue);font-size:13px">—</div></div>
     <div class="mc-box"><div class="mc-lbl">P75</div><div class="mc-val" id="mcP75" style="color:var(--green);font-size:13px">—</div></div>
   </div>
-</div>
+</div></details>
 
+<details class="adv-section-wrap">
+<summary class="adv-section-summary"><svg class="adv-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg><svg class="sec-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3H5a2 2 0 0 0-2 2v4m6-6h10a2 2 0 0 1 2 2v4M9 3v18m0 0h10a2 2 0 0 0 2-2V9M9 21H5a2 2 0 0 1-2-2V9m0 0h18"/></svg><span>Tabella Anno per Anno</span><span class="adv-badge">Avanzato</span></summary>
 <div class="sec">
   <div class="show-all-row">
     <div class="sec-label" style="margin-bottom:0" data-info-id="info-proiezione-annuale">Tabella Scenario Base (Nominali Lordi, netti TER)</div>
@@ -895,7 +905,7 @@
   <div class="tbl-outer">
     <table><thead><tr><th style="text-align:left">Età</th><th style="text-align:left">Anno</th><th>Versato</th><th>Plusvalenza</th><th>Valore Lordo</th><th>Rendita Netta/a</th><th>vs PAC</th><th>Note</th></tr></thead><tbody id="tb"></tbody></table>
   </div>
-</div>
+</div></details>
 
 <div class="pdf-section">
   <div class="pdf-section-text"><h3>📊 Esporta Report</h3><p>PDF completo multi-scheda o Excel con proiezione annuale, parametri, Monte Carlo e asset class custom.</p></div>
@@ -1961,6 +1971,8 @@
   });
 })();
 </script>
+
+
 
 </body>
 </html>
