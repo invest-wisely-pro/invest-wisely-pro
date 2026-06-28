@@ -950,7 +950,9 @@
 </div>
 <div class="chart-wrap"><canvas id="chEco"></canvas></div>
 
-<div class="sec"><div class="sec-label" data-info-id="info-eco-confronto">Confronto Finale — Tutti gli Scenari</div><div id="ecoCompareTable">—</div></div>
+<details class="adv-section-wrap">
+<summary class="adv-section-summary"><svg class="adv-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg><svg class="sec-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></svg><span>Confronto Finale Scenari</span><span class="adv-badge">Avanzato</span></summary>
+<div class="sec"><div class="sec-label" data-info-id="info-eco-confronto">Confronto Finale — Tutti gli Scenari</div><div id="ecoCompareTable">—</div></div></details>
 <div class="sec">
   <div class="sec-label">Tabella Anno per Anno — Scenario Selezionato</div>
   <div class="tbl-outer">
@@ -959,6 +961,8 @@
 </div>
 
 <!-- ════════════ SEZIONE MULTI-REGIME STOCASTICO ════════════ -->
+<details class="adv-section-wrap">
+<summary class="adv-section-summary"><svg class="adv-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg><svg class="sec-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-2.48a2 2 0 0 0-1.93 1.46l-2.35 8.36a.25.25 0 0 1-.48 0L9.24 2.18a.25.25 0 0 0-.48 0l-2.35 8.36A2 2 0 0 1 4.49 12H2"/></svg><span>Simulazione Multi-Regime Stocastica</span><span class="adv-badge">Avanzato</span></summary>
 <div class="sec" style="border-top:2px solid var(--border2);margin-top:8px;padding-top:20px">
   <div class="sec-label" data-info-id="info-multi-regime" style="font-size:15px">🔀 Simulazione Multi-Regime Stocastica
     <span style="font-size:11px;font-weight:400;color:var(--text3);margin-left:8px">1.000 percorsi · sequenza di regimi consecutivi lungo il piano</span>
@@ -1060,7 +1064,7 @@
     <div class="sec-label" style="margin-top:4px">Distribuzione anno per anno</div>
     <div id="mrTable"></div>
   </div>
-</div>
+</div></details>
 <!-- /multi-regime -->
 
 </div><!-- /tab-scenarios -->
@@ -1104,8 +1108,10 @@
   <div class="li"><span class="ll" style="background:#c4b5fd"></span>B — Ott./Pess.</div>
 </div>
 <div class="chart-wrap"><canvas id="chAB"></canvas></div>
+<details class="adv-section-wrap">
+<summary class="adv-section-summary"><svg class="adv-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg><svg class="sec-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v16a2 2 0 0 0 2 2h16"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/></svg><span>Confronto Metriche & Analisi Fiscale</span><span class="adv-badge">Avanzato</span></summary>
 <div class="sec"><div class="sec-label" data-info-id="info-ab-metriche">Confronto Metriche Chiave</div><div id="ab-metrics">—</div></div>
-<div class="sec"><div class="sec-label" data-info-id="info-ab-fiscale">Analisi Fiscale Comparata</div><div id="ab-fiscal">—</div></div>
+<div class="sec"><div class="sec-label" data-info-id="info-ab-fiscale">Analisi Fiscale Comparata</div><div id="ab-fiscal">—</div></div></details>
 <div class="sec">
   <div class="sec-label">Tabella Anno per Anno — A vs B (Scenario Base)</div>
   <div class="tbl-outer"><table><thead><tr><th style="text-align:left">Età</th><th style="text-align:left">Anno</th><th style="color:var(--blue)">Valore A</th><th style="color:var(--purple)">Valore B</th><th>Δ (B−A)</th><th>Δ %</th></tr></thead><tbody id="ab-table"></tbody></table></div>
@@ -1192,6 +1198,8 @@
     </div>
   </div>
 </div>
+<details class="adv-section-wrap">
+<summary class="adv-section-summary"><svg class="adv-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg><svg class="sec-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/></svg><span>Scenario Economico Overlay</span><span class="adv-badge">Avanzato</span></summary>
 <div class="sec">
   <div class="sec-label" data-info-id="info-decumulo-overlay">🌐 Scenario Economico (opzionale)</div>
   <div class="info-box" style="margin-bottom:12px">Sovrapponi un regime macro per testare la resilienza del decumulo. Le righe viola in tabella indicano gli anni del regime attivo.</div>
@@ -1208,7 +1216,7 @@
     </div>
     <div id="decEcoTimDesc" style="font-size:12px;color:var(--text3);margin-top:8px;line-height:1.6"></div>
   </div>
-</div>
+</div></details>
 <div class="dec-stats-grid" id="dec-stats"></div>
 <div class="legend">
   <div class="li"><span class="ll" style="background:var(--green)"></span>Ottimistico</div>
@@ -1222,6 +1230,8 @@
 </div>
 
 <!-- ═══════ DECUMULO STORICO REALE ═══════ -->
+<details class="adv-section-wrap">
+<summary class="adv-section-summary"><svg class="adv-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg><svg class="sec-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l4 2"/></svg><span>Sequenze Storiche Reali 1970–2024</span><span class="adv-badge">Avanzato</span></summary>
 <div class="sec" style="background:linear-gradient(135deg,#fff8e1 0%,#fff3e0 100%);border:1.5px solid var(--amber)">
   <div class="sec-label" data-info-id="info-decumulo-storico">📅 Decumulo su Sequenze Storiche Reali (1970-2024)</div>
   <div style="font-size:12.5px;color:var(--text2);line-height:1.6;margin-bottom:12px">
@@ -1229,7 +1239,7 @@
   </div>
   <button class="pdf-btn" id="decHistBtn" onclick="runDecHistorical()" style="background:var(--amber);color:#fff;margin-bottom:14px"><span>📅</span> Esegui Backtest Storico</button>
   <div id="decHistResults"></div>
-</div>
+</div></details>
 </div><!-- /tab-decumulo -->
 
 
@@ -1270,7 +1280,9 @@
 </div>
 
 <div id="advMcResults" style="display:none">
-  <div class="sec">
+  <details class="adv-section-wrap">
+<summary class="adv-section-summary"><svg class="adv-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg><svg class="sec-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v16a2 2 0 0 0 2 2h16"/><path d="M7 13c.5-2 1.5-3 3-3s2.5 1 3 3 1.5 3 3 3 2.5-1 3-3"/></svg><span>Distribuzione & Istogramma</span><span class="adv-badge">Avanzato</span></summary>
+<div class="sec">
     <div class="sec-label" data-info-id="info-advmc-dist">Distribuzione Risultati</div>
     <div id="advMcStats" class="grid-4" style="margin-bottom:14px"></div>
     <div class="chart-wrap"><canvas id="chAdvMC"></canvas></div>
@@ -1279,14 +1291,18 @@
     <div class="sec-label" data-info-id="info-advmc-histo">Istogramma dei Capitali Finali — Forma della Distribuzione</div>
     <div class="chart-wrap" style="height:280px"><canvas id="chAdvHist"></canvas></div>
     <div id="advHistNote" style="font-size:12px;color:var(--text3);line-height:1.6;margin-top:10px"></div>
-  </div>
-  <div class="sec">
+  </div></details>
+  <details class="adv-section-wrap">
+<summary class="adv-section-summary"><svg class="adv-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg><svg class="sec-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="18" r="3"/><circle cx="6" cy="6" r="3"/><path d="M13 6h3a2 2 0 0 1 2 2v7"/><path d="M11 18H8a2 2 0 0 1-2-2V9"/></svg><span>Confronto Modelli</span><span class="adv-badge">Avanzato</span></summary>
+<div class="sec">
     <div class="sec-label" data-info-id="info-advmc-confronto">Confronto Modelli — Stesso Portafoglio</div>
     <div class="info-box" style="margin-bottom:12px">Mostra P10/P50/P90 per tutti e 4 i modelli affiancati. Le differenze al P10 (scenario peggiore) sono le più significative per la pianificazione.</div>
     <div id="advMcComparison"></div>
     <div class="chart-wrap" style="height:300px"><canvas id="chAdvMCComp"></canvas></div>
-  </div>
-  <div class="sec" id="garchSection" style="display:none">
+  </div></details>
+  <details class="adv-section-wrap">
+<summary class="adv-section-summary"><svg class="adv-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg><svg class="sec-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-2.48a2 2 0 0 0-1.93 1.46l-2.35 8.36a.25.25 0 0 1-.48 0L9.24 2.18a.25.25 0 0 0-.48 0l-2.35 8.36A2 2 0 0 1 4.49 12H2"/></svg><span>GARCH & Regime-Switching</span><span class="adv-badge">Avanzato</span></summary>
+<div class="sec" id="garchSection" style="display:none">
     <div class="sec-label" data-info-id="info-advmc-garch">GARCH — Volatilità Dinamica nel Tempo</div>
     <div class="chart-wrap" style="height:260px"><canvas id="chGarch"></canvas></div>
   </div>
@@ -1294,7 +1310,7 @@
     <div class="sec-label" data-info-id="info-advmc-regime">Regime-Switching — Distribuzione Tempo in Bull/Bear</div>
     <div id="regimeStats" style="margin-bottom:12px"></div>
     <div class="chart-wrap" style="height:260px"><canvas id="chRegime"></canvas></div>
-  </div>
+  </div></details>
 </div>
 </div><!-- /tab-advmc -->
 
@@ -1364,18 +1380,22 @@
     <div class="chart-wrap"><canvas id="chBt"></canvas></div>
   </div>
 
-  <div class="sec" id="btDrawdownSec">
+  <details class="adv-section-wrap">
+<summary class="adv-section-summary"><svg class="adv-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg><svg class="sec-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v16a2 2 0 0 0 2 2h16"/><path d="m7 11 4 4 4-4 4 4"/></svg><span>Analisi Drawdown & Correlazioni</span><span class="adv-badge">Avanzato</span></summary>
+<div class="sec" id="btDrawdownSec">
     <div class="sec-label" data-info-id="info-backtest-drawdown">Analisi Drawdown &amp; Correlazioni Dinamiche</div>
     <div id="btDrawdownInfo" style="margin-bottom:12px;font-size:12.5px;color:var(--text2);line-height:1.6"></div>
     <div class="chart-wrap" style="height:260px"><canvas id="chBtDD"></canvas></div>
     <div id="btCorrInfo" style="margin-top:12px;padding:12px 14px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-sm);font-size:12.5px;color:var(--text2);line-height:1.7"></div>
-  </div>
+  </div></details>
 
-  <div class="sec" id="btCompareSec" style="display:none">
+  <details class="adv-section-wrap">
+<summary class="adv-section-summary"><svg class="adv-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg><svg class="sec-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></svg><span>Confronto Tutti i Periodi</span><span class="adv-badge">Avanzato</span></summary>
+<div class="sec" id="btCompareSec" style="display:none">
     <div class="sec-label" data-info-id="info-backtest-multi">Confronto Tutti i Periodi di Partenza</div>
     <div id="btCompareStats" style="margin-bottom:12px"></div>
     <div class="chart-wrap" style="height:340px"><canvas id="chBtComp"></canvas></div>
-  </div>
+  </div></details>
 
   <!-- ══ SEQUENCE OF RETURNS RISK ══ -->
   <details class="sec" id="btSeqRiskSec" open style="cursor:default">
@@ -1502,12 +1522,16 @@
 </div>
 
 <div id="fiscResults">
-  <div class="sec">
+  <details class="adv-section-wrap">
+<summary class="adv-section-summary"><svg class="adv-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg><svg class="sec-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v16a2 2 0 0 0 2 2h16"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/></svg><span>Evoluzione Lotti & Base di Costo</span><span class="adv-badge">Avanzato</span></summary>
+<div class="sec">
     <div class="sec-label" data-info-id="info-fiscale-lotti">Evoluzione Lotti e Base di Costo (PAC simulato)</div>
     <div id="fiscLotSummary" style="margin-bottom:12px"></div>
     <div class="chart-wrap" style="height:300px"><canvas id="chFisc"></canvas></div>
-  </div>
-  <div class="sec">
+  </div></details>
+  <details class="adv-section-wrap">
+<summary class="adv-section-summary"><svg class="adv-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg><svg class="sec-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3H5a2 2 0 0 0-2 2v4m6-6h10a2 2 0 0 1 2 2v4M9 3v18m0 0h10a2 2 0 0 0 2-2V9M9 21H5a2 2 0 0 1-2-2V9m0 0h18"/></svg><span>Simulazione Vendita Parziale</span><span class="adv-badge">Avanzato</span></summary>
+<div class="sec">
     <div class="sec-label" data-info-id="info-fiscale-switch">Simulazione Vendita Parziale / Totale</div>
     <div class="grid-2" style="margin-bottom:14px">
       <div class="pblock">
@@ -1520,20 +1544,22 @@
       </div>
     </div>
     <div id="fiscSellResult"></div>
-  </div>
+  </div></details>
   <div class="sec">
     <div class="sec-label" data-info-id="info-fiscale-regimi">Confronto Regimi — Impatto Netto su Piano Completo</div>
     <div id="fiscCompare"></div>
     <div class="chart-wrap" style="height:300px"><canvas id="chFiscComp"></canvas></div>
   </div>
-  <div class="sec">
+  <details class="adv-section-wrap">
+<summary class="adv-section-summary"><svg class="adv-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg><svg class="sec-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg><span>Imposta di Bollo & Zainetto Fiscale</span><span class="adv-badge">Avanzato</span></summary>
+<div class="sec">
     <div class="sec-label" data-info-id="info-fiscale-bollo">Imposta di Bollo — Erosione nel Tempo</div>
     <div id="fiscBollo"></div>
   </div>
   <div class="sec">
     <div class="sec-label" data-info-id="info-fiscale-zainetto">Zainetto Fiscale — Utilizzo Minusvalenze</div>
     <div id="fiscZainetto"></div>
-  </div>
+  </div></details>
 </div>
 </div><!-- /tab-fiscale -->
 
@@ -1664,27 +1690,33 @@
     <div id="penLegsBox" style="margin-bottom:12px"></div>
     <div class="chart-wrap" style="height:320px"><canvas id="chPen"></canvas></div>
   </div>
-  <div class="sec">
+  <details class="adv-section-wrap">
+<summary class="adv-section-summary"><svg class="adv-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg><svg class="sec-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="22" x2="21" y2="22"/><path d="M12 2L2 7h20z"/></svg><span>Dettaglio INPS, Fondo & Confronto</span><span class="adv-badge">Avanzato</span></summary>
+<div class="sec">
     <div class="sec-label" data-info-id="info-pensione-inps">Dettaglio Pensione INPS</div>
     <div id="penINPSDetail"></div>
   </div>
   <div class="sec">
     <div class="sec-label" data-info-id="info-pensione-fondo">Dettaglio Fondo Pensione</div>
     <div id="penFPDetail"></div>
-  </div>
-  <details class="sec" style="cursor:pointer">
+  </div></details>
+  <details class="adv-section-wrap">
+<summary class="adv-section-summary"><svg class="adv-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg><svg class="sec-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></svg><span>Confronto Strumenti Pensionistici</span><span class="adv-badge">Avanzato</span></summary>
+<details class="sec" style="cursor:pointer">
     <summary class="sec-label" data-info-id="info-pensione-confronto" style="cursor:pointer">⚖️ Confronto Fiscale — Fondo Pensione vs ETF equivalente</summary>
     <div id="penFiscComp" style="margin-top:12px"></div>
     <div class="chart-wrap" style="height:300px"><canvas id="chPenFisc"></canvas></div>
-  </details>
+  </details></details>
   <div class="sec">
     <div class="sec-label">Tabella Accumulo (fase contributiva)</div>
     <div id="penAccTable" class="table-wrap"></div>
   </div>
-  <div class="sec">
+  <details class="adv-section-wrap">
+<summary class="adv-section-summary"><svg class="adv-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg><svg class="sec-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3H5a2 2 0 0 0-2 2v4m6-6h10a2 2 0 0 1 2 2v4M9 3v18m0 0h10a2 2 0 0 0 2-2V9M9 21H5a2 2 0 0 1-2-2V9m0 0h18"/></svg><span>Tabelle Accumulo & Decumulo</span><span class="adv-badge">Avanzato</span></summary>
+<div class="sec">
     <div class="sec-label" data-info-id="info-pensione-dec">Tabella Decumulo (fase pensione)</div>
     <div id="penDecTable" class="table-wrap"></div>
-  </div>
+  </div></details>
 </div>
 </div><!-- /tab-pensione -->
 
@@ -1707,7 +1739,9 @@
   <div id="valContent" style="display:none">
     <!-- Parametri stress test -->
     <div class="grid-2" style="margin-bottom:18px;gap:16px">
-      <div class="sec" style="margin:0;padding:16px">
+      <details class="adv-section-wrap">
+<summary class="adv-section-summary"><svg class="adv-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg><svg class="sec-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/></svg><span>Parametri & Dati Live</span><span class="adv-badge">Avanzato</span></summary>
+<div class="sec" style="margin:0;padding:16px">
         <div class="sec-label" data-info-id="info-valuation-parametri" style="margin-bottom:12px">Parametri Scenario</div>
         <div class="pblock">
           <div class="plabel"><span>CAPE target (mean-reversion a)</span><span class="pval" id="lValCapeTarget">17</span></div>
@@ -1726,9 +1760,11 @@
         </div>
       </div>
       <div class="sec" style="margin:0;padding:16px">
-        <div class="sec-label" data-info-id="info-valuation-live" style="margin-bottom:12px">Dati Live</div>
+        <details class="adv-section-wrap">
+<summary class="adv-section-summary"><svg class="adv-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg><svg class="sec-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v16a2 2 0 0 0 2 2h16"/><path d="m7 11 4 4 4-4 4 4"/></svg><span>Impatto Rendimento & Decomposizione Bogle</span><span class="adv-badge">Avanzato</span></summary>
+<div class="sec-label" data-info-id="info-valuation-live" style="margin-bottom:12px">Dati Live</div></details>
         <div id="valLiveStats" style="display:flex;flex-direction:column;gap:8px;font-size:12.5px"></div>
-      </div>
+      </div></details>
     </div>
 
     <!-- Risultati scenari -->
@@ -1876,7 +1912,9 @@
 
   <!-- Sezione VaR/CVaR -->
   <div id="quantVaRSection" style="display:none">
-    <div class="sec-label" data-info-id="info-quant-var" style="margin-bottom:8px">Misure di Rischio — VaR / CVaR</div>
+    <details class="adv-section-wrap">
+<summary class="adv-section-summary"><svg class="adv-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg><svg class="sec-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-2.48a2 2 0 0 0-1.93 1.46l-2.35 8.36a.25.25 0 0 1-.48 0L9.24 2.18a.25.25 0 0 0-.48 0l-2.35 8.36A2 2 0 0 1 4.49 12H2"/></svg><span>VaR & Analisi Quantitativa Avanzata</span><span class="adv-badge">Avanzato</span></summary>
+<div class="sec-label" data-info-id="info-quant-var" style="margin-bottom:8px">Misure di Rischio — VaR / CVaR</div></details>
     <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:14px">
       <span style="font-size:13px;color:var(--text2)">Orizzonte temporale:</span>
       <div class="btn-group" id="quantHorizonBtns">
@@ -1973,6 +2011,27 @@
 </script>
 
 
+
+
+<script>
+/* ── Details resize fix: ridisegna i chart Chart.js quando una sezione si apre ── */
+document.addEventListener('toggle', function(e) {
+  var det = e.target;
+  if (!det || det.tagName !== 'DETAILS' || !det.open) return;
+  // Trigger resize after transition (150ms)
+  setTimeout(function() {
+    det.querySelectorAll('canvas').forEach(function(canvas) {
+      // Find Chart.js instance on this canvas
+      if (window.Chart && Chart.getChart) {
+        var chart = Chart.getChart(canvas);
+        if (chart) chart.resize();
+      }
+    });
+    // Also dispatch window resize for any other responsive listeners
+    window.dispatchEvent(new Event('resize'));
+  }, 150);
+}, true); // capture phase to catch all details elements
+</script>
 
 </body>
 </html>
