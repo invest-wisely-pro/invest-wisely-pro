@@ -33,6 +33,18 @@ let penState = {
   etfCapital: 0,       // capitale ETF stimato al pensionamento
   etfRet:     0.05,    // rendimento annuo NETTO del portafoglio del Simulatore (default ~bilanciato; aggiornato su importa)
 };
+// Snapshot dei default catturato subito dopo la dichiarazione, PRIMA di qualsiasi
+// modifica dell'utente. penState non e' persistito su localStorage (vive solo in
+// memoria di sessione), quindi non serve pulire nulla su disco: basta ripristinare
+// i campi e ri-renderizzare. Nessuna struttura annidata in penState -> shallow
+// clone (JSON round-trip) e' sicuro e non lascia riferimenti condivisi.
+const _PEN_DEFAULTS = JSON.parse(JSON.stringify(penState));
+function resetPensione() {
+  Object.keys(penState).forEach(k => delete penState[k]);
+  Object.assign(penState, JSON.parse(JSON.stringify(_PEN_DEFAULTS)));
+  try { renderPensione(); } catch (e) {}
+}
+window.resetPensione = resetPensione;
 
 let chartPen     = null;
 let chartPenFisc = null;

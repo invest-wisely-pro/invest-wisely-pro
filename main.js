@@ -263,37 +263,37 @@ const ASSET_CLASSES = {
     label: 'Fattore Momentum (Prezzo)', emoji: '🚀', cat: 'fat', isEq: true,
     mu: 0.075, vol: 0.195, inflBeta: 0.05, ter: 0.3, fxExp: 0.85,
     histCAGR: 0.117, histPeriod: '1979-2025', src: 'Jegadeesh-Titman/Carhart — CAGR come simulato dal motore (World EUR + contributo reale)',
-    desc: 'Strategia long sistematica sui vincitori degli ultimi 12-1 mesi. CAGR storico long-only ~12%/a (1970-2024). Rendimento elevato ma con crash risk: drawdown violenti nei mercati a U-turn (es. 2009: −60%). Forward-looking ~7.5%/a. Correlazione con Valore ρ≈−0.15 — principale beneficio del multi-fattore.',
+    desc: 'Strategia long sistematica sui vincitori degli ultimi 12-1 mesi. CAGR storico long-only ~12%/a (1970-2025). Rendimento elevato ma con crash risk: drawdown violenti nei mercati a U-turn (es. 2009: −60%). Forward-looking ~7.5%/a. Correlazione con Valore ρ≈−0.15 — principale beneficio del multi-fattore.',
   },
   fat_qualita: {
     label: 'Fattore Qualità / Redditività', emoji: '⭐', cat: 'fat', isEq: true,
     mu: 0.075, vol: 0.150, inflBeta: 0.18, ter: 0.3, fxExp: 0.85,
     histCAGR: 0.117, histPeriod: '1979-2025', src: 'Novy-Marx/FF5 — CAGR come simulato dal motore (World EUR + spread reale)',
-    desc: 'Aziende con alta redditività operativa, bassa leva finanziaria e stabilità degli utili (RMW: Robust Minus Weak). CAGR storico long-only ~9.5%/a (1990-2024). Carattere difensivo: sovra-performa in crisi, sotto-performa nei rally euforici. Parte del modello accademico a 5 fattori. Forward-looking ~7.5%/a.',
+    desc: 'Aziende con alta redditività operativa, bassa leva finanziaria e stabilità degli utili (RMW: Robust Minus Weak). CAGR storico long-only ~9.5%/a (1990-2025). Carattere difensivo: sovra-performa in crisi, sotto-performa nei rally euforici. Parte del modello accademico a 5 fattori. Forward-looking ~7.5%/a.',
   },
   fat_low_vol: {
     label: 'Fattore Bassa Volatilità (Difensivo)', emoji: '📉', cat: 'fat', isEq: true,
     mu: 0.070, vol: 0.120, inflBeta: 0.12, ter: 0.3, fxExp: 0.85,
     histCAGR: 0.089, histPeriod: '1979-2025', src: 'Frazzini & Pedersen — CAGR come simulato dal motore (World EUR + spread reale)',
-    desc: 'Azioni con volatilità storica e beta di mercato bassi (BAB: Betting Against Beta). Anomalia CAPM: il rendimento aggiustato per il rischio supera quello del mercato. CAGR storico ~8.5%/a con σ ~12% (1970-2024). Concentrato in settori difensivi: utilities, consumer staples, healthcare. Forward-looking ~7.0%/a. Ottimo abbinamento con Momentum.',
+    desc: 'Azioni con volatilità storica e beta di mercato bassi (BAB: Betting Against Beta). Anomalia CAPM: il rendimento aggiustato per il rischio supera quello del mercato. CAGR storico ~8.5%/a con σ ~12% (1970-2025). Concentrato in settori difensivi: utilities, consumer staples, healthcare. Forward-looking ~7.0%/a. Ottimo abbinamento con Momentum.',
   },
   fat_size: {
     label: 'Fattore Dimensione (Small Cap)', emoji: '🔬', cat: 'fat', isEq: true,
     mu: 0.075, vol: 0.190, inflBeta: 0.20, ter: 0.25, fxExp: 0.85,
     histCAGR: 0.104, histPeriod: '1979-2025', src: 'Banz/Fama-French — CAGR come simulato dal motore (World EUR + spread reale)',
-    desc: 'Premio di dimensione (SMB: Small Minus Big) — le piccole capitalizzazioni tendono a sovra-performare le grandi nel lungo periodo. CAGR storico ~9.5%/a (1970-2024). Il premio è più robusto nel segmento value. Parzialmente compresso post-pubblicazione accademica. Forward-looking ~7.5%/a. Correlazione con mercato ~0.80.',
+    desc: 'Premio di dimensione (SMB: Small Minus Big) — le piccole capitalizzazioni tendono a sovra-performare le grandi nel lungo periodo. CAGR storico ~9.5%/a (1970-2025). Il premio è più robusto nel segmento value. Parzialmente compresso post-pubblicazione accademica. Forward-looking ~7.5%/a. Correlazione con mercato ~0.80.',
   },
   fat_investment: {
     label: 'Fattore Investimento (CMA)', emoji: '🏗️', cat: 'fat', isEq: true,
     mu: 0.072, vol: 0.130, inflBeta: 0.10, ter: 0.35, fxExp: 0.85,
     histCAGR: 0.112, histPeriod: '1979-2025', src: 'Fama & French (2015) — CAGR come simulato dal motore (World EUR + spread reale)',
-    desc: 'Aziende con crescita degli attivi bassa (Conservative Minus Aggressive — CMA). Le imprese che investono meno producono rendimenti più alti nel lungo periodo. Parte del modello a 5 fattori (Fama-French 2015). CAGR storico ~8%/a (1990-2024). Carattere difensivo, alta correlazione con Qualità (ρ≈0.40). Forward-looking ~7.2%/a.',
+    desc: 'Aziende con crescita degli attivi bassa (Conservative Minus Aggressive — CMA). Le imprese che investono meno producono rendimenti più alti nel lungo periodo. Parte del modello a 5 fattori (Fama-French 2015). CAGR storico ~8%/a (1990-2025). Carattere difensivo, alta correlazione con Qualità (ρ≈0.40). Forward-looking ~7.2%/a.',
   },
   fat_dividendi: {
     label: 'Fattore Dividendi / Dividend Growth', emoji: '💰', cat: 'fat', isEq: true,
     mu: 0.072, vol: 0.145, inflBeta: 0.22, ter: 0.3, fxExp: 0.85,
-    histCAGR: 0.092, histPeriod: '1970-2024', src: 'Literatura accademica sui dividendi',
-    desc: 'Aziende con dividend yield elevato e/o storia di crescita dei dividendi (Dividend Aristocrats). CAGR storico ~9.2%/a (1970-2024). Sovrapposizione parziale con Qualità e Valore. Flusso cedolare elevato riduce la volatilità percepita. Settori tipici: utility, finanziari, consumer staples. Forward-looking ~7.2%/a.',
+    histCAGR: 0.092, histPeriod: '1970-2025', src: 'Literatura accademica sui dividendi',
+    desc: 'Aziende con dividend yield elevato e/o storia di crescita dei dividendi (Dividend Aristocrats). CAGR storico ~9.2%/a (1970-2025). Sovrapposizione parziale con Qualità e Valore. Flusso cedolare elevato riduce la volatilità percepita. Settori tipici: utility, finanziari, consumer staples. Forward-looking ~7.2%/a.',
   },
   fat_multifat: {
     label: 'Multi-Fattore (Val+Mom+Qual+LowVol+CMA)', emoji: '🎯', cat: 'fat', isEq: true,
@@ -344,25 +344,25 @@ const ASSET_CLASSES = {
   ob_usa_st: {
     label: 'Gov. USA Breve (1-3a)', emoji: '🇺🇸', cat: 'ob_usa',
     mu: 0.043, vol: 0.027, inflBeta: 0.10, ter: 0.07, fxExp: 1.0,
-    histCAGR: 0.048, histPeriod: '1970-2024', src: 'Federal Reserve (FRED)',
+    histCAGR: 0.048, histPeriod: '1970-2025', src: 'Federal Reserve (FRED)',
     desc: 'Titoli del Tesoro USA a scadenza 1-3 anni. Duration ~1.8. Volatilità storica ~2.7%. Rendimento legato al tasso di policy della Federal Reserve. Ottimo sostituto della liquidità in contesti di tassi elevati. Quasi nulla sensibilità ai tassi a lungo termine.',
   },
   ob_usa_it: {
     label: 'Gov. USA Intermedio (3-7a)', emoji: '🇺🇸', cat: 'ob_usa',
     mu: 0.045, vol: 0.055, inflBeta: -0.15, ter: 0.07, fxExp: 1.0,
-    histCAGR: 0.062, histPeriod: '1970-2024', src: 'Federal Reserve (FRED)',
+    histCAGR: 0.062, histPeriod: '1970-2025', src: 'Federal Reserve (FRED)',
     desc: 'Treasury USA 3-7 anni. Duration ~4.5. Volatilità ~5.5%. Punto di riferimento del mercato obbligazionario USA. Buona decorrelazione dall\'azionario in recessione (flight to quality). CAGR storico 6.2%/a gonfiato dal ciclo di calo dei tassi 1981-2021.',
   },
   ob_usa_lt: {
     label: 'Gov. USA Lungo (7-10a)', emoji: '🇺🇸', cat: 'ob_usa',
     mu: 0.047, vol: 0.085, inflBeta: -0.30, ter: 0.1, fxExp: 1.0,
-    histCAGR: 0.068, histPeriod: '1970-2024', src: 'Federal Reserve (FRED)',
+    histCAGR: 0.068, histPeriod: '1970-2025', src: 'Federal Reserve (FRED)',
     desc: 'Treasury USA 7-10 anni. Duration ~7-8. Forte apprezzamento in recessioni/deflazione. Soffre in regimi inflattivi (perdite reali del 30-40% negli anni \'70). Correlazione con azioni ~−0.15 in era post-2000.',
   },
   ob_usa_ult: {
     label: 'Gov. USA Ultra-Lungo (20-30a)', emoji: '🇺🇸', cat: 'ob_usa',
     mu: 0.048, vol: 0.145, inflBeta: -0.45, ter: 0.1, fxExp: 1.0,
-    histCAGR: 0.074, histPeriod: '1970-2024', src: 'Federal Reserve (FRED)',
+    histCAGR: 0.074, histPeriod: '1970-2025', src: 'Federal Reserve (FRED)',
     desc: 'Titoli del Tesoro USA 20-30 anni. Duration ~17-19. Volatilità ~14.5%/a — paragonabile alle azioni. Sensibilità massima ai tassi: −17% circa per ogni +1% di rialzo. Usato come deflation hedge (All Seasons 40%, Permanent Portfolio 25%). Anno 2022: −30%.',
   },
 
@@ -426,19 +426,19 @@ const ASSET_CLASSES = {
   gold: {
     label: 'Oro (metallo fisico / ETC)', emoji: '🥇', cat: 'real', isGold: true,
     mu: 0.038, vol: 0.150, inflBeta: 0.50, ter: 0.2, fxExp: 1.0,
-    histCAGR: 0.078, histPeriod: '1970-2024', src: 'Prezzo spot oro (mercato internazionale)',
-    desc: 'Prezzo spot oro in USD, convertito in EUR. CAGR 1970-2024: 7.8%/a — fortemente gonfiato dalla fine del gold standard 1971 e dal rialzo degli anni \'70-\'80. Forward-looking ~3.8%/a (inflazione + premio di scarsità). Nessun dividendo o cedola — rendimento da solo apprezzamento. Forte decorrelazione con azioni in crisi.',
+    histCAGR: 0.078, histPeriod: '1970-2025', src: 'Prezzo spot oro (mercato internazionale)',
+    desc: 'Prezzo spot oro in USD, convertito in EUR. CAGR 1970-2025: 7.8%/a — fortemente gonfiato dalla fine del gold standard 1971 e dal rialzo degli anni \'70-\'80. Forward-looking ~3.8%/a (inflazione + premio di scarsità). Nessun dividendo o cedola — rendimento da solo apprezzamento. Forte decorrelazione con azioni in crisi.',
   },
   commodities: {
     label: 'Commodities Diversificate', emoji: '⚡', cat: 'real',
     mu: 0.032, vol: 0.185, inflBeta: 0.65, ter: 0.3, fxExp: 1.0,
-    histCAGR: 0.052, histPeriod: '1970-2024', src: 'Bloomberg Commodity EUR reale dal 2005 (curvo.eu), stima aggregata prima',
+    histCAGR: 0.052, histPeriod: '1970-2025', src: 'Bloomberg Commodity EUR reale dal 2005 (curvo.eu), stima aggregata prima',
     desc: 'Paniere diversificato di materie prime: energia ~55%, metalli industriali ~20%, agricoltura ~25%. CAGR storico ~5.2%/a influenzato dagli shock petroliferi degli anni \'70. Rendimento reale di lungo periodo vicino a zero per i costi di roll sui futures. Ottima copertura inflazione a breve termine (β≈0.65).',
   },
   cash: {
     label: 'Liquidità / Mercato Monetario', emoji: '💵', cat: 'cash', isCash: true,
     mu: 0.025, vol: 0.020, inflBeta: 0.15, ter: 0.05, fxExp: 0.0,
-    histCAGR: 0.048, histPeriod: '1970-2024', src: 'Dati storici tassi breve termine (Fed/BCE)',
+    histCAGR: 0.048, histPeriod: '1970-2025', src: 'Dati storici tassi breve termine (Fed/BCE)',
     desc: 'BOT, T-Bills, fondi monetari, conti deposito. Rendimento = tasso di policy della banca centrale. Volatilità ~2% (include rischio di reinvestimento/variazione tassi: il rendimento atteso cambia ad ogni rinnovo). Rendimento reale spesso negativo in periodi inflattivi. CAGR storico 4.8%/a gonfiato dall\'era dei tassi alti anni \'80. Forward-looking normalizzato ~2.5%/a.',
   },
   // ══════════════════════════════════════════════════════════════
@@ -452,14 +452,14 @@ const ASSET_CLASSES = {
     label: 'Efficient Core 90/60 USA', emoji: '\u26a1', cat: 'eq', isComposite: true,
     composite: [ { ac: 'eq_usa', w: 0.90 }, { ac: 'ob_usa_it', w: 0.60 } ],
     finCost: 0.0125, ter: 0.20, fxExp: 0.70,
-    histPeriod: '1970-2024', src: 'WisdomTree NTSX / efficient core',
+    histPeriod: '1970-2025', src: 'WisdomTree NTSX / efficient core',
     desc: 'Mattoncino capital-efficient: 90% azioni USA + 60% Treasury USA (notional 150%, leva 1,5x). Nel builder si scompone nei due sottostanti, cos\u00ec puoi combinarlo con oro, trend, ex-USA ecc. mantenendo corretti correlazioni e tassazione. Costo di finanziamento ~1,25%/a gi\u00e0 dedotto.',
   },
   ec_glob_core: {
     label: 'Efficient Core 90/60 Globale', emoji: '\u26a1', cat: 'eq', isComposite: true,
     composite: [ { ac: 'eq_sviluppati', w: 0.90 }, { ac: 'ob_glob_gov', w: 0.60 } ],
     finCost: 0.0125, ter: 0.25, fxExp: 0.55,
-    histPeriod: '1970-2024', src: 'efficient core globale',
+    histPeriod: '1970-2025', src: 'efficient core globale',
     desc: 'Come l\'Efficient Core USA ma diversificato globalmente: 90% azioni mercati sviluppati + 60% governativi globali (hedged EUR), notional 150%. Nel builder si scompone nei sottostanti per un calcolo corretto di rischio, correlazioni e fiscalit\u00e0. Costo di finanziamento ~1,25%/a dedotto.',
   },
 };
@@ -2077,7 +2077,8 @@ function renderEcoScenarios() {
     `<strong>€${fmtN(state.pac)}/m</strong> PAC · ` +
     `<strong>${state.years} anni</strong> · ` +
     `<strong>${pName}</strong>` +
-    (seqOn ? ` · <span style="color:var(--purple)">⚠ Sequence Risk attivo</span>` : '');
+    (seqOn ? ` · <span style="color:var(--purple)">⚠ Sequence Risk attivo</span>` : '') +
+    ` · <span style="color:var(--text3)">Vale per l'orizzonte di accumulo. Il Decumulo ha un proprio pannello scenari, indipendente da questo.</span>`;
 
   // Build scenario cards
   document.getElementById('ecoScenarioGrid').innerHTML = Object.entries(ECO_SCENARIOS).map(([k, s]) => `
@@ -2921,7 +2922,7 @@ function simulateDecumulo(sc) {
 
   const data = [];
   for (let y = 1; y <= Y; y++) {
-    if (cW <= 0) { data.push({ year: y, start: 0, ret: 0, withdrawal: 0, withdrawalNet: 0, tax: 0, end: 0, rate: 0, note: 'Portafoglio esaurito', eco: false }); continue; }
+    if (cW <= 0) { data.push({ year: y, start: 0, ret: 0, withdrawal: 0, withdrawalNet: 0, tax: 0, end: 0, rate: 0, retRate: 0, note: 'Portafoglio esaurito', eco: false }); continue; }
     const startW = cW;
     const inEcoRegime = ecoWin && y >= ecoWin.s && y <= ecoWin.e;
     let grossRate;
@@ -2976,7 +2977,7 @@ function simulateDecumulo(sc) {
       }
       prevReturn = netRate;
     }
-    data.push({ year: y, start: Math.round(startW), ret: Math.round(annRet), withdrawal: Math.round(wd), withdrawalNet, tax: Math.round(taxOnWd), end: Math.round(cW), rate: startW > 0 ? wd / startW : 0, note, eco: !!inEcoRegime });
+    data.push({ year: y, start: Math.round(startW), ret: Math.round(annRet), withdrawal: Math.round(wd), withdrawalNet, tax: Math.round(taxOnWd), end: Math.round(cW), rate: startW > 0 ? wd / startW : 0, retRate: netRate, note, eco: !!inEcoRegime });
     wd = nextWd;
   }
   return data;
@@ -3329,7 +3330,7 @@ function renderDecumulo() {
     const ecoStyle = d.eco ? 'background:rgba(147,52,230,.05);border-left:2px solid rgba(147,52,230,.4)' : '';
     const taxStr = d.tax > 0 ? `<span style="color:var(--orange);font-size:11px">−${fmt(d.tax)}</span>` : '—';
     const netStr = d.withdrawalNet != null ? `<strong style="color:var(--teal)">${fmt(d.withdrawalNet)}</strong>` : fmt(d.withdrawal);
-    return `<tr style="${ecoStyle}"><td style="text-align:left"><strong>${d.year}</strong></td><td>${fmt(d.start)}</td><td class="${d.ret >= 0 ? 'pos' : 'neg'}">${fmt(d.ret)}</td><td style="color:var(--red)">${fmt(d.withdrawal)}</td><td>${taxStr}</td><td>${netStr}</td><td class="${endCls}"><strong>${fmt(d.end)}</strong></td><td class="${rateCls}">${(d.rate * 100).toFixed(2)}%</td><td style="font-size:11.5px;color:var(--text3)">${d.note || ''}</td></tr>`;
+    return `<tr style="${ecoStyle}"><td style="text-align:left"><strong>${d.year}</strong></td><td>${fmt(d.start)}</td><td class="${d.ret >= 0 ? 'pos' : 'neg'}">${fmt(d.ret)}</td><td class="${d.ret >= 0 ? 'pos' : 'neg'}" style="font-size:11px;color:var(--text3)">${d.retRate != null ? (d.retRate*100).toFixed(2)+'%' : '—'}</td><td style="color:var(--red)">${fmt(d.withdrawal)}</td><td>${taxStr}</td><td>${netStr}</td><td class="${endCls}"><strong>${fmt(d.end)}</strong></td><td class="${rateCls}">${(d.rate * 100).toFixed(2)}%</td><td style="font-size:11.5px;color:var(--text3)">${d.note || ''}</td></tr>`;
   }).join('');
 }
 
@@ -4245,6 +4246,26 @@ function clearSavedState() {
   location.reload();
 }
 window.clearSavedState = clearSavedState;
+
+// Reset generale con conferma: stessa pulizia di clearSavedState (Simulatore, A/B,
+// Decumulo, Custom), NON tocca gli scenari salvati esplicitamente dall'utente
+// (suitePro_v2_scenarios) ne' la scheda Pensione/Fiscalita (vivono solo in memoria di
+// sessione: un refresh della pagina le riporta comunque ai default).
+function confirmResetAll() {
+  const ok = window.confirm('Ricominciare da zero? Tutti i valori inseriti in questa sessione (Simulatore, A/B, Decumulo, Custom, Pensione, Fiscalita) verranno persi. Gli scenari salvati esplicitamente non vengono toccati.');
+  if (ok) clearSavedState();
+}
+window.confirmResetAll = confirmResetAll;
+
+// Reset generale con conferma: stessa pulizia di clearSavedState (Simulatore, A/B,
+// Decumulo, Custom), NON tocca gli scenari salvati esplicitamente dall'utente
+// (suitePro_v2_scenarios) né la scheda Pensione/Fiscalità (vivono solo in memoria di
+// sessione: un refresh della pagina le riporta comunque ai default).
+function confirmResetAll() {
+  const ok = window.confirm('Ricominciare da zero? Tutti i valori inseriti in questa sessione (Simulatore, A/B, Decumulo, Custom, Pensione, Fiscalità) verranno persi. Gli scenari salvati esplicitamente non vengono toccati.');
+  if (ok) clearSavedState();
+}
+window.confirmResetAll = confirmResetAll;
 
 // ── Ripristino al caricamento ─────────────────────────────────
 (function restoreOnLoad() {
