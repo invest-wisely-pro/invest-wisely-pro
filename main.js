@@ -4249,16 +4249,6 @@ window.clearSavedState = clearSavedState;
 
 // Reset generale con conferma: stessa pulizia di clearSavedState (Simulatore, A/B,
 // Decumulo, Custom), NON tocca gli scenari salvati esplicitamente dall'utente
-// (suitePro_v2_scenarios) ne' la scheda Pensione/Fiscalita (vivono solo in memoria di
-// sessione: un refresh della pagina le riporta comunque ai default).
-function confirmResetAll() {
-  const ok = window.confirm('Ricominciare da zero? Tutti i valori inseriti in questa sessione (Simulatore, A/B, Decumulo, Custom, Pensione, Fiscalita) verranno persi. Gli scenari salvati esplicitamente non vengono toccati.');
-  if (ok) clearSavedState();
-}
-window.confirmResetAll = confirmResetAll;
-
-// Reset generale con conferma: stessa pulizia di clearSavedState (Simulatore, A/B,
-// Decumulo, Custom), NON tocca gli scenari salvati esplicitamente dall'utente
 // (suitePro_v2_scenarios) né la scheda Pensione/Fiscalità (vivono solo in memoria di
 // sessione: un refresh della pagina le riporta comunque ai default).
 function confirmResetAll() {
