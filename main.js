@@ -2882,10 +2882,71 @@ function runSuccessMC() {
 // ══════════════════════════════════════════════════════════════
 // TAB DECUMULO — Guyton-Klinger corretto
 // ══════════════════════════════════════════════════════════════
+// ══════════════════════════════════════════════════════════════
+// COLLEGAMENTO PENSIONE → DECUMULO
+// Se attivo, ogni anno il portafoglio paga solo la parte di spesa NON coperta dalla
+// pensione netta (INPS + rendita Fondo Pensione) calcolata nella scheda Pensione.
+// Convenzioni identiche alla scheda Pensione (calcPensione, gap analysis):
+//   • INPS rivalutata al 75% dell'inflazione (perequazione parziale);
+//   • rendita FP rivalutata a meta' del rendimento netto del fondo.
+// Gli importi di calcPensione sono NOMINALI all'anno di pensionamento: qui vengono
+// riportati alla moneta di inizio decumulo; poi ogni motore li indicizza con la
+// propria inflazione (ipotizzata nel parametrico, storica nel motore storico).
+// Se il decumulo inizia prima della pensione, il portafoglio copre tutta la spesa
+// fino all'arrivo della pensione (ponte per il pensionamento anticipato).
+// NON persistito: penState non viene salvato, quindi dopo un refresh la scheda
+// Pensione torna ai default e il collegamento riparte spento.
+// ══════════════════════════════════════════════════════════════
+let decPensionLink = false;
+function getDecPensionLink() {
+  if (!decPensionLink || typeof calcPensione !== 'function' || typeof penState === 'undefined') return null;
+  let r;
+  try { r = calcPensione(); } catch (e) { return null; }
+  const infl = penState.infl || 0;
+  const inpsAnn = Math.max(0, r.pensioneNettaAnn || 0);
+  const fpAnn = Math.max(0, r.rendFPNetta || 0);
+  const fpGrowth = (penState.fpRet || 0) * (1 - (r.aliqFP || 0)) * 0.5;
+  // anni tra inizio decumulo (fine accumulo nel Simulatore) e inizio pensione
+  const shift = (penState.retAge - penState.age) - state.years;
+  let startIdx, inpsStart, fpStart;
+  if (shift >= 0) {
+    startIdx = shift;
+    inpsStart = inpsAnn / Math.pow(1 + infl, shift);
+    fpStart = fpAnn / Math.pow(1 + infl, shift);
+  } else {
+    // pensione gia' in corso all'inizio del decumulo: la porto avanti con le sue regole
+    startIdx = 0;
+    inpsStart = inpsAnn * Math.pow(1 + 0.75 * infl, -shift);
+    fpStart = fpAnn * Math.pow(1 + fpGrowth, -shift);
+  }
+  return { startIdx, inpsStart, fpStart, fpGrowth, inpsAnn, fpAnn,
+           retAge: penState.retAge, decAge: state.age + state.years,
+           ageMismatch: penState.age !== state.age };
+}
+// Aggiorna gli importi pensione dall'anno yearIdx al successivo, con l'inflazione di quell'anno
+function decPensionStep(pl, cur, yearIdx, inflY) {
+  if (yearIdx + 1 <= pl.startIdx) { cur.inps *= (1 + inflY); cur.fp *= (1 + inflY); }
+  else { cur.inps *= (1 + 0.75 * inflY); cur.fp *= (1 + pl.fpGrowth); }
+}
+
+function toggleDecPensionLink(on) {
+  decPensionLink = !!on;
+  renderDecumulo();
+  // I risultati storici partono solo dal loro bottone: se sono gia' a schermo li
+  // ricalcolo, altrimenti resterebbero quelli senza/con pensione accanto ai nuovi.
+  const hr = document.getElementById('decHistResults');
+  if (hr && hr.innerHTML.trim()) runDecHistorical();
+}
+window.toggleDecPensionLink = toggleDecPensionLink;
+
 function simulateDecumulo(sc) {
   const { startPortfolio: sP, withdrawal: w0, years: Y, portfolio: port, strategy: strat, inflation: infl, ter, ecoScenario, ecoTiming } = decState;
   const terRate = ter / 100, inflRate = infl / 100;
-  const initialWithdrawalRate = sP > 0 ? w0 / sP : 0;
+  const pl = getDecPensionLink();
+  const plCur = pl ? { inps: pl.inpsStart, fp: pl.fpStart } : null;
+  // Con la pensione, le regole GK ragionano sul prelievo DAL PORTAFOGLIO, non sulla spesa totale
+  const _initDraw = Math.max(0, w0 - ((pl && pl.startIdx === 0) ? pl.inpsStart + pl.fpStart : 0));
+  const initialWithdrawalRate = sP > 0 ? (_initDraw > 0 ? _initDraw : w0) / sP : 0;
   // Età di inizio decumulo — usata per lifecycle weight corretto
   const decStartAge = state.age + state.years;
   let cW = sP, wd = w0, prevReturn = null;
@@ -2924,6 +2985,9 @@ function simulateDecumulo(sc) {
   for (let y = 1; y <= Y; y++) {
     if (cW <= 0) { data.push({ year: y, start: 0, ret: 0, withdrawal: 0, withdrawalNet: 0, tax: 0, end: 0, rate: 0, retRate: 0, note: 'Portafoglio esaurito', eco: false }); continue; }
     const startW = cW;
+    const _yi = y - 1;
+    const pensInc = (pl && _yi >= pl.startIdx) ? plCur.inps + plCur.fp : 0;
+    const draw = Math.max(0, wd - pensInc); // prelievo effettivo dal portafoglio (= wd se collegamento spento)
     const inEcoRegime = ecoWin && y >= ecoWin.s && y <= ecoWin.e;
     let grossRate;
     if (inEcoRegime) {
@@ -2941,9 +3005,9 @@ function simulateDecumulo(sc) {
     const netRate = grossRate - terRate;
     // Mid-point: interessi maturano sulla media tra inizio e fine anno
     // Equivalente a: cW_dopo = (cW - wd/2) * (1+r) - wd/2
-    const midW = Math.max(0, cW - wd / 2);
+    const midW = Math.max(0, cW - draw / 2);
     const annRet = midW * netRate;
-    cW = Math.max(0, cW - wd + annRet);
+    cW = Math.max(0, cW - draw + annRet);
 
     // ── Tassazione del prelievo (ETF UCITS, regime amministrato) ──────────────
     // Quota di plusvalenza proporzionale al prelievo (metodo costo medio):
@@ -2953,19 +3017,20 @@ function simulateDecumulo(sc) {
     // Il costo base si riduce proporzionalmente alla quota di portafoglio venduta.
     const taxRateDec = blendedTaxRate(decStartAge + y);
     const gainFrac = startW > 0 ? Math.max(0, (startW - totalCostBasis) / startW) : 0;
-    const taxOnWd = wd * gainFrac * taxRateDec;
-    const withdrawalNet = Math.round(wd - taxOnWd);
+    const taxOnWd = draw * gainFrac * taxRateDec;
+    const withdrawalNet = Math.round(draw - taxOnWd);
     // Aggiorna il costo base: ridotto proporzionalmente alla quota venduta
-    const sellFrac = startW > 0 ? Math.min(1, wd / startW) : 0;
+    const sellFrac = startW > 0 ? Math.min(1, draw / startW) : 0;
     totalCostBasis = Math.max(0, totalCostBasis * (1 - sellFrac));
 
     let note = crashNote, nextWd = wd;
+    if (pl && _yi === pl.startIdx && pensInc > 0) note = (note ? note + ' · ' : '') + '🏛 inizio pensione';
     if (inEcoRegime && y === ecoWin.s) note = (note ? note + ' · ' : '') + ECO_SCENARIOS[ecoScenario].emoji + ' regime attivo';
     if (ecoWin && y === ecoWin.e + 1) note = '↩ ritorno normale';
     if (strat === 'fixed') { nextWd = wd; }
     else if (strat === 'inflation') { nextWd = wd * (1 + inflRate); if (!note && infl > 0 && y > 1) note = `+${infl.toFixed(1)}% inflaz.`; }
     else if (strat === 'gk') {
-      const currentRate = cW > 0 ? wd / cW : Infinity;
+      const currentRate = cW > 0 ? draw / cW : Infinity;
       const portfolioRuleBlocks = prevReturn !== null && prevReturn < 0;
       if (currentRate > initialWithdrawalRate * 1.20) { nextWd = wd * 0.90; note = (note ? note + ' · ' : '') + 'GK: -10% (tasso alto)'; }
       else if (currentRate < initialWithdrawalRate * 0.80) {
@@ -2977,7 +3042,8 @@ function simulateDecumulo(sc) {
       }
       prevReturn = netRate;
     }
-    data.push({ year: y, start: Math.round(startW), ret: Math.round(annRet), withdrawal: Math.round(wd), withdrawalNet, tax: Math.round(taxOnWd), end: Math.round(cW), rate: startW > 0 ? wd / startW : 0, retRate: netRate, note, eco: !!inEcoRegime });
+    data.push({ year: y, start: Math.round(startW), ret: Math.round(annRet), withdrawal: Math.round(draw), spending: Math.round(wd), pension: Math.round(pensInc), withdrawalNet, tax: Math.round(taxOnWd), end: Math.round(cW), rate: startW > 0 ? draw / startW : 0, retRate: netRate, note, eco: !!inEcoRegime });
+    if (pl) decPensionStep(pl, plCur, _yi, inflRate);
     wd = nextWd;
   }
   return data;
@@ -3082,7 +3148,10 @@ function runDecumuloHistorical() {
 
   const results = [];
 
+  const pl = getDecPensionLink();
+  const _initDrawH = Math.max(0, w0 - ((pl && pl.startIdx === 0) ? pl.inpsStart + pl.fpStart : 0));
   for (const startYr of startYears) {
+    const plCur = pl ? { inps: pl.inpsStart, fp: pl.fpStart } : null;
     const startIdx = (startYr - 1970) * 12;
     let cap = sP, wd = w0, prevYearRet = null;
     let survived = true, exhaustYear = null;
@@ -3091,7 +3160,9 @@ function runDecumuloHistorical() {
     for (let yi = 0; yi < Y; yi++) {
       if (cap <= 0) { survived = false; exhaustYear = exhaustYear ?? yi; cap = 0; }
       // 12 mesi di rendimenti reali, sottraendo prelievo mensile (wd/12)
-      const monthlyWd = wd / 12;
+      const pensInc = (pl && yi >= pl.startIdx) ? plCur.inps + plCur.fp : 0;
+      const draw = Math.max(0, wd - pensInc); // prelievo dal portafoglio (= wd se collegamento spento)
+      const monthlyWd = draw / 12;
       let yearRet = 1; // moltiplicatore lordo
       for (let m = 0; m < 12; m++) {
         if (cap <= 0) { cap = 0; break; }
@@ -3124,8 +3195,9 @@ function runDecumuloHistorical() {
 
       // Adatta prelievo per anno successivo (strategia)
       let nextWd = wd;
-      const initialWR = sP > 0 ? w0 / sP : 0;
-      const currentWR = cap > 0 ? wd / cap : Infinity;
+      const initialWR = sP > 0 ? (_initDrawH > 0 ? _initDrawH : w0) / sP : 0;
+      const currentWR = cap > 0 ? draw / cap : Infinity;
+      if (pl) decPensionStep(pl, plCur, yi, inflRate);
       if (strat === 'fixed') { nextWd = wd; }
       else if (strat === 'inflation') { nextWd = wd * (1 + inflRate); }
       else if (strat === 'gk') {
@@ -3296,6 +3368,30 @@ function renderDecumulo() {
     b.style.color = hedged ? 'var(--blue)' : 'var(--text3)';
   })();
   const dBase = simulateDecumulo('normal'), dBest = simulateDecumulo('best'), dWorst = simulateDecumulo('worst');
+  // Pannello collegamento pensione: mostra SEMPRE gli importi usati e da dove arrivano
+  (function(){
+    const el = document.getElementById('decPensionInfo');
+    if (!el) return;
+    const cb = document.getElementById('decPensionChk'); if (cb) cb.checked = decPensionLink;
+    const F = (typeof fmtP === 'function') ? fmtP : fmt;
+    if (!decPensionLink) {
+      el.style.color = 'var(--text3)';
+      el.innerHTML = 'Spento: il portafoglio paga tutta la spesa ogni anno. Attivalo per sottrarre la pensione netta calcolata nella scheda <strong>Piano Pensione</strong>: il portafoglio pagher\u00E0 solo la parte non coperta.';
+      return;
+    }
+    const pl = getDecPensionLink();
+    if (!pl) { el.style.color = 'var(--red)'; el.innerHTML = '\u26A0\uFE0F Impossibile leggere la scheda Piano Pensione.'; return; }
+    const annoPens = new Date().getFullYear() + (penState.retAge - penState.age);
+    let h = `\uD83C\uDFDB Pensione netta collegata: <strong>INPS ${F(Math.round(pl.inpsAnn))}/anno</strong> + <strong>Fondo Pensione ${F(Math.round(pl.fpAnn))}/anno</strong> (nominali nel ${annoPens}, dai ${pl.retAge} anni). `;
+    h += pl.startIdx > 0
+      ? `Il decumulo inizia a ${pl.decAge} anni: per i primi <strong>${pl.startIdx} anni</strong> il portafoglio copre tutta la spesa, poi solo la parte non coperta dalla pensione. `
+      : `Il portafoglio copre solo la parte di spesa non coperta dalla pensione. `;
+    h += `Il campo <em>Prelievo annuo iniziale</em> ora indica la tua <strong>spesa annua totale</strong>. `;
+    h += `<span style="opacity:.8">Fonte: scheda Piano Pensione (RAL ${F(penState.ral)}, pensione a ${penState.retAge} anni): se non l'hai compilata, sono valori di esempio.</span>`;
+    if (pl.ageMismatch) h += `<br>\u26A0\uFE0F L'et\u00E0 nella scheda Pensione (${penState.age}) \u00E8 diversa da quella del Simulatore (${state.age}): nella scheda Pensione premi "Importa et\u00E0 e capitale ETF dal Simulatore" per allinearle.`;
+    el.style.color = 'var(--text2)';
+    el.innerHTML = h;
+  })();
   const { years: Y } = decState;
   const endBase = dBase[Y - 1]?.end || 0, endBest = dBest[Y - 1]?.end || 0, endWorst = dWorst[Y - 1]?.end || 0;
   const ruinBase = dBase.findIndex(d => d.note && d.note.includes('esaurito'));
@@ -3310,6 +3406,7 @@ function renderDecumulo() {
     { l: 'Totale prelevato lordo (base)', v: fmt(totalExtracted), c: 'var(--text)' },
     { l: 'Totale prelevato netto (base)', v: fmt(totalExtractedNet), c: 'var(--teal)' },
     { l: 'Totale imposte pagate (base)', v: fmt(totalTax), c: 'var(--orange)' },
+    ...(decPensionLink ? [{ l: 'Coperto dalla pensione (base)', v: fmt(dBase.reduce((a, d) => a + (d.pension || 0), 0)), c: 'var(--green)' }] : []),
     { l: 'Rovina scenario base', v: ruinBase < 0 ? 'Non si esaurisce' : 'Anno ' + (ruinBase + 1), c: ruinBase < 0 ? 'var(--green)' : 'var(--red)' },
     { l: 'Rovina pessimistico', v: ruinWorst < 0 ? 'Regge' : 'Anno ' + (ruinWorst + 1), c: ruinWorst < 0 ? 'var(--green)' : 'var(--red)' },
   ].map(s => `<div class="dec-stat"><div class="dec-stat-label">${s.l}</div><div class="dec-stat-value" style="color:${s.c}">${s.v}</div></div>`).join('');
@@ -3330,7 +3427,7 @@ function renderDecumulo() {
     const ecoStyle = d.eco ? 'background:rgba(147,52,230,.05);border-left:2px solid rgba(147,52,230,.4)' : '';
     const taxStr = d.tax > 0 ? `<span style="color:var(--orange);font-size:11px">−${fmt(d.tax)}</span>` : '—';
     const netStr = d.withdrawalNet != null ? `<strong style="color:var(--teal)">${fmt(d.withdrawalNet)}</strong>` : fmt(d.withdrawal);
-    return `<tr style="${ecoStyle}"><td style="text-align:left"><strong>${d.year}</strong></td><td>${fmt(d.start)}</td><td class="${d.ret >= 0 ? 'pos' : 'neg'}">${fmt(d.ret)}</td><td class="${d.ret >= 0 ? 'pos' : 'neg'}" style="font-size:11px;color:var(--text3)">${d.retRate != null ? (d.retRate*100).toFixed(2)+'%' : '—'}</td><td style="color:var(--red)">${fmt(d.withdrawal)}</td><td>${taxStr}</td><td>${netStr}</td><td class="${endCls}"><strong>${fmt(d.end)}</strong></td><td class="${rateCls}">${(d.rate * 100).toFixed(2)}%</td><td style="font-size:11.5px;color:var(--text3)">${d.note || ''}</td></tr>`;
+    return `<tr style="${ecoStyle}"><td style="text-align:left"><strong>${d.year}</strong></td><td>${fmt(d.start)}</td><td class="${d.ret >= 0 ? 'pos' : 'neg'}">${fmt(d.ret)}</td><td class="${d.ret >= 0 ? 'pos' : 'neg'}" style="font-size:11px;color:var(--text3)">${d.retRate != null ? (d.retRate*100).toFixed(2)+'%' : '—'}</td><td style="color:var(--green)">${d.pension ? fmt(d.pension) : '—'}</td><td style="color:var(--red)">${fmt(d.withdrawal)}</td><td>${taxStr}</td><td>${netStr}</td><td class="${endCls}"><strong>${fmt(d.end)}</strong></td><td class="${rateCls}">${(d.rate * 100).toFixed(2)}%</td><td style="font-size:11.5px;color:var(--text3)">${d.note || ''}</td></tr>`;
   }).join('');
 }
 
@@ -5939,7 +6036,7 @@ async function generatePDF() {
           ['Capitale finale', fmtFull(endBase), fmtFull(endBest), fmtFull(endWorst)],
           ['Totale estratto (base)', fmtFull(totalExt), '\u2014', '\u2014'],
           ['Prelievo iniziale / anno', fmtFull(decState.withdrawal), '\u2014', '\u2014'],
-          ['Tasso di prelievo iniziale', decState.startPortfolio > 0 ? (decState.withdrawal / decState.startPortfolio * 100).toFixed(2) + '%' : '\u2014', '\u2014', '\u2014'],
+          [decPensionLink ? 'Spesa iniziale / capitale (pensione collegata)' : 'Tasso di prelievo iniziale', decState.startPortfolio > 0 ? (decState.withdrawal / decState.startPortfolio * 100).toFixed(2) + '%' : '\u2014', '\u2014', '\u2014'],
           ['Esaurimento capitale', ruinBase  < 0 ? 'Non si esaurisce' : 'Anno ' + (ruinBase + 1), '\u2014', ruinWorst < 0 ? 'Regge' : 'Anno ' + (ruinWorst + 1)],
         ],
         styles: { fontSize: 8, cellPadding: 2.5 },

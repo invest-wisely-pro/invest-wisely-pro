@@ -1150,6 +1150,12 @@
     <button class="gbtn a-blue" onclick="importFromSim()" style="padding:8px 16px;font-size:13px;font-weight:600">⬇️ Importa dal Simulatore</button>
     <span id="importStatus" style="font-size:12px;color:var(--text3)">Usa parametri manuali oppure importa il valore finale simulato</span>
   </div>
+  <div style="margin:0 0 14px;padding:12px 14px;background:rgba(30,142,62,.06);border:1px solid rgba(30,142,62,.25);border-radius:var(--radius-sm)">
+    <label style="display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600;cursor:pointer">
+      <input type="checkbox" id="decPensionChk" onchange="toggleDecPensionLink(this.checked)"> 🏛 Includi la pensione (INPS + Fondo Pensione) dalla scheda Piano Pensione
+    </label>
+    <div id="decPensionInfo" style="font-size:12px;line-height:1.55;margin-top:6px;color:var(--text3)"></div>
+  </div>
   <div class="grid-2" style="margin-bottom:16px">
     <div class="pblock"><div class="plabel"><span>Patrimonio iniziale decumulo</span><span class="pval" id="lDecStart">€500.000</span></div><input type="range" id="sDecStart" min="0" max="5000000" step="10000" value="500000"><div class="range-hints"><span>€0</span><span>€5M</span></div></div>
     <div class="pblock"><div class="plabel"><span>Prelievo annuo iniziale</span><span class="pval" id="lDecW">€20.000/a</span></div><input type="range" id="sDecW" min="0" max="300000" step="1000" value="20000"><div class="range-hints"><span>€0</span><span>€300k/anno</span></div></div>
@@ -1233,7 +1239,7 @@
 <div class="chart-wrap"><canvas id="chDec"></canvas></div>
 <div class="sec">
   <div class="sec-label">Tabella Anno per Anno — Scenario Base</div>
-  <div class="tbl-outer"><table><thead><tr><th style="text-align:left">Anno</th><th>Valore Inizio</th><th>Rendimento</th><th title="Tasso di rendimento netto realizzato nell'anno">Rend. %</th><th>Prelievo Lordo</th><th>Imposta</th><th>Netto Ricevuto</th><th>Valore Fine</th><th>Tasso Prelievo</th><th>Note</th></tr></thead><tbody id="dec-table"></tbody></table></div>
+  <div class="tbl-outer"><table><thead><tr><th style="text-align:left">Anno</th><th>Valore Inizio</th><th>Rendimento</th><th title="Tasso di rendimento netto realizzato nell'anno">Rend. %</th><th title="Pensione netta INPS + rendita Fondo Pensione, se collegata">Pensione</th><th>Prelievo Lordo</th><th>Imposta</th><th>Netto Ricevuto</th><th>Valore Fine</th><th>Tasso Prelievo</th><th>Note</th></tr></thead><tbody id="dec-table"></tbody></table></div>
 </div>
 
 <!-- ═══════ DECUMULO STORICO REALE ═══════ -->
@@ -1573,10 +1579,18 @@
 <!-- ══════════════════════════════════════════════════════ TAB: PIANO PENSIONE -->
 <div class="tab-content" id="tab-pensione">
 <div class="sec">
-  <div class="sec-label" data-info-id="info-pensione-acc">👴 Piano Pensionistico Integrato — INPS + Fondo Pensione + ETF <button onclick="if(window.confirm('Azzerare tutti i valori della scheda Pensione e tornare ai default?'))resetPensione()" title="Ripristina i valori di default di questa scheda" style="margin-left:auto;padding:4px 10px;font-size:10.5px;font-family:'DM Mono',monospace;font-weight:400;text-transform:none;letter-spacing:normal;border:1px solid var(--border2);border-radius:5px;background:var(--bg);color:var(--text3);cursor:pointer;white-space:nowrap">↺ Reset scheda</button></div>
+  <div class="sec-label" data-info-id="info-pensione-acc">👴 Piano Pensionistico Integrato — INPS + Fondo Pensione + ETF <button onclick="if(window.confirm('Azzerare tutti i valori della scheda Pensione e tornare ai default?'))resetPensione()" title="Ripristina i valori di default di questa scheda" style="padding:4px 10px;font-size:10.5px;font-family:'DM Mono',monospace;font-weight:400;text-transform:none;letter-spacing:normal;border:1px solid var(--border2);border-radius:5px;background:var(--bg);color:var(--text3);cursor:pointer;white-space:nowrap">↺ Reset scheda</button></div>
   <div class="info-box" style="margin-bottom:14px">
     Stima la tua <strong>pensione pubblica INPS</strong> (regime contributivo/misto/retributivo), affiancala a un <strong>fondo pensione</strong> (con deducibilità fiscale e TFR) e al <strong>capitale ETF</strong> accumulato nel Simulatore. Verifica se i tre pilastri coprono la spesa desiderata in pensione e ottimizza il versamento al fondo.
   <br><br><em>Nota: questa stima (INPS + Fondo Pensione) è calcolata separatamente e non confluisce automaticamente nei grafici della scheda Decumulo — se vuoi il quadro combinato ETF + pensione, confronta i risultati dei due tab.</em></div>
+
+<div class="pdf-section" style="margin-top:0;margin-bottom:14px;padding:18px 20px">
+  <div class="pdf-section-text"><h3>📄 Report Pensione</h3><p>PDF dedicato a questa scheda: pensione INPS, Fondo Pensione con composizione del montante, e copertura combinata delle tre fonti.</p></div>
+  <div style="display:flex;gap:10px;flex-wrap:wrap;margin-left:auto">
+    <button class="pdf-btn" id="penPdfBtn" onclick="generatePensionePDF()"><span>📄</span> Scarica Report Pensione PDF</button>
+  </div>
+</div>
+
 
   <div class="grid-2" style="margin-bottom:16px">
     <div>
@@ -1670,6 +1684,11 @@
       <div class="pblock" style="margin-bottom:10px">
         <div class="plabel"><span>Inflazione attesa</span><span class="pval" id="lPenInfl">2%</span></div>
         <input type="range" id="sPenInfl" min="0" max="6" step="0.25" value="2" oninput="penState.infl=+this.value/100;document.getElementById('lPenInfl').textContent=this.value+'%';renderPensione()">
+      </div>
+      <div class="pblock" style="margin-bottom:10px">
+        <div class="plabel"><span>Crescita reale RAL attesa</span><span class="pval" id="lPenRalG">0.5%/a</span></div>
+        <input type="range" id="sPenRalG" min="0" max="3" step="0.25" value="0.5" oninput="penState.ralGrowth=+this.value/100;document.getElementById('lPenRalG').textContent=this.value+'%/a';renderPensione()">
+        <div style="font-size:11px;color:var(--text3);margin-top:4px">Crescita oltre l'inflazione. Pubblico impiego o carriera stabile: 0-0,5%. Carriera privata con avanzamenti: 1-2%.</div>
       </div>
       <div style="margin-top:14px">
         <button class="gbtn a-blue" onclick="importPenFromSim()" style="padding:9px 16px;font-weight:600;width:100%">⬇️ Importa età e capitale ETF dal Simulatore</button>
