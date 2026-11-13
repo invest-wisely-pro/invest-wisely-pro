@@ -415,7 +415,16 @@ function suitePensione() {
   if (!SRC.pens) { warn('pensione.js non presente in questa build — suite saltata'); return; }
   eval(grab(SRC.pens, /let penState = \{[\s\S]*?\n\};/).replace('let ', 'global.'));
   loadConst(SRC.pens, /const COEFF_TRASF = \{[\s\S]*?\n\};/);
-  ['getCoeffTrasf','calcIRPEF','calcAliqMargIRPEF','sanitizeRalChanges','penRalPath','calcPensione'].forEach(fn => loadFn(SRC.pens, fn));
+  loadConst(SRC.pens, /const PEN_CATEGORIE = \{[\s\S]*?\n\};/);
+  ['penCat','getCoeffTrasf','calcIRPEF','calcAliqMargIRPEF','sanitizeRalChanges','penRalPath','calcPensione'].forEach(fn => loadFn(SRC.pens, fn));
+
+  // 6.0 Categoria lavorativa (2026-11-13): aliquote 33/33/25/24% e default RGS 1,5%
+  if (global.PEN_CATEGORIE) {
+    const C = global.PEN_CATEGORIE;
+    ok(C.priv.aliq === 0.33 && C.pub.aliq === 0.33 && C.gs.aliq === 0.25 && C.artcom.aliq === 0.24, 'Aliquote pensionistiche per categoria (33/33/25/24%)');
+    ok(!C.gs.dip && !C.artcom.dip && C.priv.dip && C.pub.dip, 'TFR e datore solo per i dipendenti');
+    ok(global.penState.ralGrowth === 0.015 && global.penState.categoria === 'priv', 'Default: crescita RAL 1,5% (RGS), dipendente privato');
+  } else warn('PEN_CATEGORIE non trovata');
 
   // 6.a Coefficienti di trasformazione ufficiali (DM 436/2024)
   if (global.getCoeffTrasf) {

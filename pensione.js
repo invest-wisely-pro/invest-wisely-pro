@@ -9,13 +9,20 @@ let penState = {
   lifeExp:    85,
   contYears:  10,      // anni contributi già versati
   ral:        35000,   // RAL attuale lordo annuo
-  ralGrowth:  0.005,   // crescita reale RAL annua (default prudenziale: 0,5%/a.
+  ralGrowth:  0.015,   // crescita reale RAL annua. FIX 2026-11-13: default allineato alla RGS
+                        // (Rapporto n. 26/2025: le retribuzioni crescono con la produttivita' per occupato,
+                        // ~1,5% reale). Con lo 0,5% precedente la RAL cresceva MENO della rivalutazione del
+                        // montante (PIL 1%) e il tasso di sostituzione risultava gonfiato di ~12-15 punti.
+                        // (Nota storica: default prudenziale precedente 0,5%/a.
                         // L'1,5%/a tradizionale riflette carriere private con scatti/promozioni
                         // frequenti; nel pubblico impiego le progressioni economiche orizzontali
                         // sono pluriennali e vincolate da risorse contrattuali limitate, quindi
                         // una crescita reale più contenuta è l'ipotesi di base più prudente.
                         // Modificabile dal cursore "Crescita reale RAL attesa" nella scheda.)
-  aliqCont:   0.33,    // aliquota contributiva IVS (dip. priv. = 33%)
+  aliqCont:   0.33,    // (non usato nei calcoli: l'aliquota deriva dalla categoria, vedi PEN_CATEGORIE)
+  categoria:  'priv',  // 'priv' | 'pub' | 'gs' (P.IVA Gestione separata) | 'artcom' (artigiano/commerciante)
+  forfettario: false,  // solo autonomi: regime forfettario -> versamenti FP non deducibili dal reddito forfettario
+  penVer:     2,       // versione dei default (2 = crescita RAL RGS 1,5%)
   montante:   0,       // montante contributivo già accumulato
   desired:    2000,    // spesa mensile desiderata in pensione (€ oggi)
   infl:       0.02,    // inflazione attesa
@@ -48,6 +55,21 @@ let penState = {
 // i campi e ri-renderizzare. Nessuna struttura annidata in penState -> shallow
 // clone (JSON round-trip) e' sicuro e non lascia riferimenti condivisi.
 const _PEN_DEFAULTS = JSON.parse(JSON.stringify(penState));
+// ── Categoria lavorativa (FIX 2026-11-13) ─────────────────────────────────────
+// Determina aliquota contributiva pensionistica, base imponibile, TFR e contributo del
+// datore. I coefficienti di trasformazione e la tassazione della pensione sono uguali per tutti.
+const PEN_CATEGORIE = {
+  priv:   { dip: true,  aliq: 0.33, label: 'Dipendente privato',
+            desc: 'Fondo lavoratori dipendenti INPS: aliquota pensionistica 33% (circa 9,19% a carico tuo, 23,81% del datore) sulla RAL. TFR e fondi negoziali con contributo del datore.' },
+  pub:    { dip: true,  aliq: 0.33, label: 'Dipendente pubblico',
+            desc: 'Gestione dipendenti pubblici INPS (CTPS): aliquota 33% (8,80% a carico tuo, 24,20% dell\'ente). Stessi coefficienti del privato. Il TFR vale per gli assunti dal 2001; il TFS di chi è stato assunto prima non è modellato. Nei fondi pubblici (Espero, Perseo Sirio) il TFR conferito è accantonato figurativamente dall\'ente.' },
+  gs:     { dip: false, aliq: 0.25, label: 'Autonomo P.IVA (Gestione separata)',
+            desc: 'Professionisti senza cassa: aliquota totale 26,07%, di cui 25% per la pensione (circolare INPS 8/2026), sul reddito imponibile. Niente TFR né contributo del datore. Le casse professionali (avvocati, ingegneri, commercialisti...) hanno regole proprie e non sono modellate.' },
+  artcom: { dip: false, aliq: 0.24, label: 'Artigiano / Commerciante',
+            desc: 'Gestioni INPS artigiani e commercianti: 24% per la pensione (circolare INPS 14/2026; i commercianti versano anche lo 0,48% per l\'indennizzo, che non va alla pensione), sul reddito d\'impresa. I contributi minimi dovuti sul reddito minimale non sono modellati. Niente TFR né contributo del datore.' },
+};
+function penCat() { return PEN_CATEGORIE[penState.categoria] || PEN_CATEGORIE.priv; }
+
 // ── Salvataggio della scheda Pensione nel browser (come il Simulatore) ──
 // Chiave dedicata; al caricamento si accettano SOLO i campi noti (quelli dei default)
 // e del tipo giusto: un dato corrotto o di una versione precedente non entra nei calcoli,
@@ -70,6 +92,10 @@ function loadPenStateLS() {
       else if (typeof v === typeof def) { penState[k] = v; n++; }
     }
     penState.ralChanges = sanitizeRalChanges(penState.ralChanges);
+    if (!PEN_CATEGORIE[penState.categoria]) penState.categoria = 'priv';
+    // Migrazione: chi aveva il vecchio default (0,5%) passa al nuovo (1,5%, RGS); una scelta diversa resta.
+    if (!(snap.penVer >= 2) && penState.ralGrowth === 0.005) penState.ralGrowth = 0.015;
+    penState.penVer = 2;
     const _r = penState.etfImportRef;
     penState.etfImportRef = (_r && typeof _r === 'object' && typeof _r.sig === 'string' && isFinite(+_r.cap)) ? { sig: _r.sig, cap: +_r.cap } : null;
     return n > 0;
@@ -102,6 +128,9 @@ function syncPenControls() {
     g.querySelectorAll('.gbtn').forEach(x => x.classList.toggle('a-blue', x.getAttribute(attr) === val));
   };
   setBtn('penRegimeBtns', 'data-reg', penState.regime);
+  setBtn('penCatBtns', 'data-cat', penState.categoria || 'priv');
+  setBtn('penForfBtns', 'data-forf', penState.forfettario ? 'si' : 'no');
+  penApplyCatUI();
   setBtn('penTFRBtns', 'data-tfr', penState.tfrSi ? 'si' : 'no');
   setBtn('penNegozialeBtns', 'data-neg', penState.isNegoziale ? 'si' : 'no');
   const rd = document.getElementById('penRegimeDesc');
@@ -196,7 +225,7 @@ function fmtP(v) {
 //   >=18 anni al 31/12/1995 -> RETRIBUTIVO fino al 31/12/2011, contributivo dal 2012 (Fornero)
 const PEN_REGIME_DESC = {
   contributivo: `<strong>Contributivo puro (L. 335/1995):</strong> per chi ha iniziato a versare dal 1° gennaio 1996 (nessun contributo ante-1996).
-    Il montante individuale (33% della retribuzione, entro il massimale contributivo: €120.607 nel 2025, indicizzato) viene rivalutato annualmente al tasso di capitalizzazione (media quinquennale PIL nominale).
+    Il montante individuale (contributi della tua categoria: 33% della retribuzione per i dipendenti, 25% o 24% del reddito per gli autonomi, entro il massimale contributivo: €120.607 nel 2025, indicizzato) viene rivalutato annualmente al tasso di capitalizzazione (media quinquennale PIL nominale).
     La pensione lorda = montante × coefficiente di trasformazione (per età). <em>Pensione minima di importo almeno pari all'assegno sociale × 1,5 per accedere a 64 anni.</em>`,
   misto: `<strong>Sistema misto (L. 335/1995):</strong> per chi aveva contributi al 31/12/1995 ma <strong>meno di 18 anni</strong>.
     La quota maturata fino al 31/12/1995 è retributiva (~2% della retribuzione pensionabile per anno di anzianità ante-1996); dal 1° gennaio 1996 in poi il calcolo è contributivo.
@@ -208,10 +237,19 @@ const PEN_REGIME_DESC = {
 
 // ── Calcolo core ──────────────────────────────────────────────
 function calcPensione() {
-  const { age, retAge, lifeExp, contYears, ral: _ralCursore, ralGrowth, aliqCont,
+  const { age, retAge, lifeExp, contYears, ral: _ralCursore, ralGrowth, aliqCont: _aliqSel,
           montante, desired, infl, pil, fpVers, fpRet,
-          tfrSi, regime, isNegoziale, contDatoriale, contLavoratore,
+          tfrSi: _tfrSel, regime, isNegoziale: _negSel, contDatoriale, contLavoratore,
           rispFiscDest } = penState;
+  // Categoria lavorativa: aliquota pensionistica, TFR e contributo del datore (solo dipendenti)
+  const _cat        = penCat();
+  const isDip       = _cat.dip;
+  const aliqCont    = _cat.aliq;
+  const tfrSi       = isDip && !!_tfrSel;
+  const isNegoziale = isDip && !!_negSel;
+  // Forfettario: i versamenti al fondo pensione non si deducono dal reddito forfettario
+  // (L. 190/2014 art. 1 c. 64: deducibili solo i contributi obbligatori) -> nessun risparmio IRPEF.
+  const _forf       = !isDip && !!penState.forfettario;
   // Una variazione di RAL all'eta' attuale sostituisce la RAL di oggi in TUTTO il calcolo
   // (anche nella stima degli anni gia' lavorati, che parte dalla RAL di oggi a ritroso)
   const _ralOggiCh = sanitizeRalChanges(penState.ralChanges).find(c => c.age === age);
@@ -240,7 +278,7 @@ function calcPensione() {
   const plafondResiduo    = Math.max(0, deduzMassima - fpVersAnnDat);
   const deduzLorda        = fpVersAnnVolont + fpVersAnnLav;
   const deduzEffettiva    = Math.min(deduzLorda, plafondResiduo);
-  const aliqMargIRPEF  = calcAliqMargIRPEF(ral);
+  const aliqMargIRPEF  = _forf ? 0 : calcAliqMargIRPEF(ral);
   const risparmioFisc  = deduzEffettiva * aliqMargIRPEF; // risparmio IRPEF annuo
 
   // Risparmio fiscale destinazione:
@@ -320,7 +358,7 @@ function calcPensione() {
     const tfrAnnCur  = tfrSi ? (curRal / TFR_DIVISOR) : 0;
     // Se il TFR resta in azienda, si accumula come liquidazione separata, rivalutata
     // per legge (1,5% + 75% inflazione). Verrà tassato separatamente al riscatto.
-    if (!tfrSi) {
+    if (isDip && !tfrSi) {   // gli autonomi non hanno TFR
       capTfrAz = capTfrAz * (1 + revAzienda) + (curRal / TFR_DIVISOR);
     }
     // Fondo negoziale: contributo datoriale + lavoratore proporzionali alla RAL corrente.
@@ -341,7 +379,7 @@ function calcPensione() {
     const _deducLY   = fpVers * 12 + fpLavCur;
     const deducY     = Math.min(_deducLY, _plafResY);
     const eccY       = Math.max(0, _deducLY - _plafResY);
-    const aliqY      = calcAliqMargIRPEF(curRal / _deflY);
+    const aliqY      = _forf ? 0 : calcAliqMargIRPEF(curRal / _deflY);
     const rispY      = deducY * aliqY;
     const extraFPY   = rispFiscDest === 'reinvesti_fp'  ? rispY : 0;
     const extraETFY  = rispFiscDest === 'reinvesti_etf' ? rispY : 0;
@@ -782,7 +820,8 @@ async function generatePensionePDF() {
         ['Anni di contributi gia versati', `${penState.contYears} anni`, 'Crescita reale RAL attesa', (penState.ralGrowth * 100).toFixed(1) + '%/a'],
         ...(_ralApplicate.length ? [['Variazioni di RAL (euro di oggi)', { content: _ralApplicate.map(c => c.age + ' anni: ' + fmtP(c.ral)).join(' · '), colSpan: 3 }]] : []),
         ['Versamento mensile Fondo Pensione', fmtP(penState.fpVers) + '/mese', 'Rendimento atteso Fondo Pensione', (penState.fpRet * 100).toFixed(1) + '%/a lordo'],
-        ['TFR versato al Fondo', penState.tfrSi ? 'Si' : 'No', 'Fondo negoziale (contributo datoriale)', penState.isNegoziale ? 'Si' : 'No'],
+        ['Categoria lavorativa', penCat().label + (penCat().dip ? '' : (penState.forfettario ? ' (forfettario)' : ' (regime ordinario)')), 'Aliquota contributiva pensionistica', (penCat().aliq * 100).toFixed(0) + '%'],
+        ...(penCat().dip ? [['TFR versato al Fondo', penState.tfrSi ? 'Si' : 'No', 'Fondo negoziale (contributo datoriale)', penState.isNegoziale ? 'Si' : 'No']] : []),
         [penState.etfBridgeYears > 0 ? `Capitale ETF al pensionamento (dopo ${penState.etfBridgeYears} anni di ponte)` : 'Capitale ETF stimato al pensionamento', fmtP(penState.etfCapital) + (penEtfStale() ? ' (DA REIMPORTARE: il Simulatore e cambiato)' : ''), 'Rendimento ETF netto atteso', (penState.etfRet * 100).toFixed(1) + '%/a'],
       ],
       styles: { fontSize: 8, cellPadding: 2.0 },
@@ -803,7 +842,7 @@ async function generatePensionePDF() {
         ['Pensione netta annua', fmtP(r.pensioneNettaAnn)],
         ['Pensione netta mensile', fmtP(r.pensioneNettaMens)],
         ['Pensione netta mensile in euro di oggi', fmtP(Math.round(r.pensioneNettaMens / _deflaz))],
-        ['Tasso di sostituzione lordo (pensione lorda / ultima RAL lorda)', (r.tassoSost * 100).toFixed(1) + '%'],
+        ['Tasso di sostituzione lordo (pensione lorda / ultim' + (penCat().dip ? 'a RAL lorda)' : 'o reddito lordo)'), (r.tassoSost * 100).toFixed(1) + '%'],
         ['Pensione netta / ultima RAL lorda', r.tassoSost > 0 ? (r.pensioneNettaAnn / (r.pensioneLordaAnn / r.tassoSost) * 100).toFixed(1) + '%' : '-'],
         ['Coefficiente di trasformazione applicato', (r.coeffTrasf * 100).toFixed(3) + '%'],
         ['Montante contributivo finale', fmtP(r.cumMontante)],
@@ -1143,7 +1182,8 @@ function renderPenKPI(r) {
     <div class="mcard">
       <div class="ml">Tasso di sostituzione</div>
       <div class="mv" style="color:${tsCol}">${(tassoSost*100).toFixed(1)}%</div>
-      <div class="ms">INPS lorda / RAL finale · ${penState.contYears + yearsToRet} anni di contributi${(penState.contYears + yearsToRet) >= 42 ? ' <span title="Tasso elevato perché assume una carriera lunga e SENZA interruzioni fino a età avanzata (coefficiente alto). Con carriera standard (~38 anni, età di vecchiaia) il tasso scende tipicamente al 60-70% lordo. Interruzioni, part-time o anni non coperti lo riducono.">ⓘ</span>' : ''}</div>
+      <div class="ms">INPS lorda / ${penCat().dip ? 'RAL' : 'reddito'} finale · ${penState.contYears + yearsToRet} anni di contributi${(penState.contYears + yearsToRet) >= 42 ? ' <span title="Tasso elevato perché assume una carriera lunga e SENZA interruzioni fino a età avanzata (coefficiente alto). Con carriera standard (~38 anni, età di vecchiaia) il tasso scende tipicamente al 60-70% lordo. Interruzioni, part-time o anni non coperti lo riducono.">ⓘ</span>' : ''}</div>
+      <div class="ms" style="font-size:10.5px;margin-top:4px">Riferimento RGS 2050-2070 (dipendente privato): 58-60% lordo con 38 anni di contributi, 66-68% uscendo a 69-70 anni${penState.ralGrowth < (penState.pil ?? 0.01) - 1e-9 ? '<br><span style="color:var(--orange)">La RAL cresce meno della rivalutazione del montante (PIL): il tasso risulta più alto di quanto avverrebbe con le ipotesi RGS.</span>' : ''}</div>
     </div>
     <div class="mcard">
       <div class="ml">Montante INPS al pensionamento</div>
@@ -1611,3 +1651,32 @@ document.addEventListener('DOMContentLoaded', () => {
 // riallinea cursori, etichette e pulsanti ai valori ricaricati dal browser.
 // Registrato per ultimo: gira dopo il DOMContentLoaded che collega i pulsanti.
 document.addEventListener('DOMContentLoaded', () => { try { syncPenControls(); } catch (e) {} });
+
+// Mostra/nasconde i controlli che dipendono dalla categoria (TFR e fondo negoziale solo per i
+// dipendenti, regime fiscale solo per gli autonomi) e adatta l'etichetta della RAL.
+function penApplyCatUI() {
+  const c = penCat();
+  const dipB = document.getElementById('penDipBlock'), autB = document.getElementById('penAutBlock');
+  if (dipB) dipB.style.display = c.dip ? '' : 'none';
+  if (autB) autB.style.display = c.dip ? 'none' : '';
+  const desc = document.getElementById('penCatDesc'); if (desc) desc.textContent = c.desc;
+  const nm = document.getElementById('lPenRALName'); if (nm) nm.textContent = c.dip ? 'RAL attuale (lordo annuo)' : 'Reddito imponibile annuo (lordo)';
+}
+window.penApplyCatUI = penApplyCatUI;
+document.addEventListener('DOMContentLoaded', () => {
+  const cat = document.getElementById('penCatBtns'), forf = document.getElementById('penForfBtns');
+  if (cat) cat.onclick = e => {
+    const b = e.target.closest('[data-cat]'); if (!b || !PEN_CATEGORIE[b.dataset.cat]) return;
+    penState.categoria = b.dataset.cat;
+    cat.querySelectorAll('.gbtn').forEach(x => x.classList.toggle('a-blue', x === b));
+    penApplyCatUI();
+    renderPensione();
+  };
+  if (forf) forf.onclick = e => {
+    const b = e.target.closest('[data-forf]'); if (!b) return;
+    penState.forfettario = b.dataset.forf === 'si';
+    forf.querySelectorAll('.gbtn').forEach(x => x.classList.toggle('a-blue', x === b));
+    renderPensione();
+  };
+  penApplyCatUI();
+});

@@ -257,6 +257,7 @@
       <p>Stima la pensione pubblica <b>INPS</b> (metodo contributivo) e quella del <b>fondo pensione</b> complementare, e calcola quanta parte del reddito desiderato copriranno. Conviene compilarla <b>prima</b> delle schede Probabilità di Successo e Decumulo, che possono usarne i risultati.</p>
       <h3>Cosa inserire</h3>
       <ul>
+        <li><b>Categoria lavorativa</b>: dipendente privato o pubblico (aliquota 33%, TFR, fondi negoziali), autonomo con P.IVA in Gestione separata (25%) o artigiano/commerciante (24%), senza TFR né contributo del datore. Per gli autonomi scegli anche il regime fiscale: nel forfettario i versamenti al fondo non danno risparmio IRPEF. Le casse professionali non sono modellate.</li>
         <li><b>Età</b> attuale e di pensionamento, anni di contributi già versati.</li>
         <li><b>RAL</b> lorda e crescita reale attesa; eventuali <b>variazioni di carriera</b> (fino a 10), indicate in euro di oggi. Nella tabella di accumulo ogni riga è un anno indicato con l'età a fine anno: una variazione "dai 42 anni" compare nella riga 43.</li>
         <li><b>Fondo pensione</b>: versamento mensile, contributo del datore e del lavoratore (fondi negoziali), destinazione del TFR.</li>
@@ -264,7 +265,7 @@
       </ul>
       <h3>Come calcola</h3>
       <ul>
-        <li>Contributi INPS pari al 33% della RAL, rivalutati ogni anno; pensione = montante × <b>coefficiente di trasformazione</b> (tabella in vigore dal 1° gennaio 2027, D.D. 16/10/2026), con un calo stimato dello 0,3% l'anno per gli aggiornamenti futuri.</li>
+        <li>Contributi INPS secondo la categoria (33% per i dipendenti, 25% o 24% per gli autonomi), rivalutati ogni anno con il PIL (1% reale); la RAL cresce di default dell'1,5% reale come nelle ipotesi della Ragioneria Generale dello Stato. Il tasso di sostituzione si confronta con le proiezioni RGS: 58-60% lordo con 38 anni di contributi, 66-68% uscendo a 69-70 anni; pensione = montante × <b>coefficiente di trasformazione</b> (tabella in vigore dal 1° gennaio 2027, D.D. 16/10/2026), con un calo stimato dello 0,3% l'anno per gli aggiornamenti futuri.</li>
         <li><b>IRPEF 2026</b> con scaglioni al 23%, 33% e 43% e detrazione per pensionati; soglie e detrazioni sono aggiornate all'inflazione, così una pensione futura non viene tassata con le soglie di oggi.</li>
         <li>Fondo pensione: contributi <b>deducibili fino a 5.300 €</b> l'anno (TFR escluso); la rendita è tassata dal 15% fino al 9% in base agli anni di partecipazione; il risparmio IRPEF annuale può essere reinvestito.</li>
       </ul>
@@ -1616,6 +1617,17 @@
 </div>
 
 
+  <div style="margin-bottom:16px">
+    <div style="font-size:11px;color:var(--text3);font-family:'DM Mono',monospace;text-transform:uppercase;letter-spacing:.05em;font-weight:600;margin-bottom:8px">Categoria lavorativa</div>
+    <div class="btn-group" id="penCatBtns" style="flex-wrap:wrap">
+      <button class="gbtn a-blue" data-cat="priv">Dipendente privato</button>
+      <button class="gbtn" data-cat="pub">Dipendente pubblico</button>
+      <button class="gbtn" data-cat="gs">Autonomo P.IVA (Gestione separata)</button>
+      <button class="gbtn" data-cat="artcom">Artigiano / Commerciante</button>
+    </div>
+    <div id="penCatDesc" class="adv-desc" style="margin-top:8px"></div>
+  </div>
+
   <div class="grid-2" style="margin-bottom:16px">
     <div>
       <div style="font-size:11px;color:var(--text3);font-family:'DM Mono',monospace;text-transform:uppercase;letter-spacing:.05em;font-weight:600;margin-bottom:8px">Regime previdenziale</div>
@@ -1626,7 +1638,7 @@
       </div>
       <div id="penRegimeDesc" class="adv-desc" style="margin-top:8px"></div>
     </div>
-    <div>
+    <div><div id="penDipBlock">
       <div style="font-size:11px;color:var(--text3);font-family:'DM Mono',monospace;text-transform:uppercase;letter-spacing:.05em;font-weight:600;margin-bottom:8px">TFR al Fondo Pensione</div>
       <div class="btn-group" id="penTFRBtns" style="flex-wrap:wrap">
         <button class="gbtn a-blue" data-tfr="si">✅ Conferito al FP <span id="lPenTFRAuto" style="opacity:.7"></span></button>
@@ -1658,6 +1670,16 @@
             style="accent-color:#2e7d32">
         </div>
       </div>
+      </div>
+    <div id="penAutBlock" style="display:none">
+      <div style="font-size:11px;color:var(--text3);font-family:'DM Mono',monospace;text-transform:uppercase;letter-spacing:.05em;font-weight:600;margin-bottom:8px">Regime fiscale</div>
+      <div class="btn-group" id="penForfBtns" style="flex-wrap:wrap">
+        <button class="gbtn a-blue" data-forf="no">Ordinario (IRPEF)</button>
+        <button class="gbtn" data-forf="si">Forfettario</button>
+      </div>
+      <div style="font-size:10.5px;color:var(--text3);margin-top:6px;line-height:1.5">Da autonomo non hai TFR né contributo del datore: il fondo pensione è un fondo aperto o un PIP con soli versamenti tuoi. Nel forfettario i versamenti al fondo non si deducono dal reddito forfettario (si deducono solo i contributi obbligatori): il risparmio IRPEF è zero, salvo altri redditi IRPEF da cui dedurli.</div>
+    </div>
+
     </div>
   </div>
 
@@ -1678,7 +1700,7 @@
         <input type="range" id="sPenLifeExp" min="70" max="100" step="1" value="85" oninput="penState.lifeExp=+this.value;document.getElementById('lPenLifeExp').textContent=this.value;renderPensione()">
       </div>
       <div class="pblock" style="margin-bottom:10px">
-        <div class="plabel"><span>RAL attuale (lordo annuo)</span><span class="pval" id="lPenRAL">€35.000</span></div>
+        <div class="plabel"><span id="lPenRALName">RAL attuale (lordo annuo)</span><span class="pval" id="lPenRAL">€35.000</span></div>
         <input type="range" id="sPenRAL" min="15000" max="150000" step="1000" value="35000" oninput="penState.ral=+this.value;document.getElementById('lPenRAL').textContent=fmt(+this.value);renderPensione()">
       </div>
       <div class="pblock" style="margin-bottom:10px">
@@ -1710,9 +1732,9 @@
         <input type="range" id="sPenInfl" min="0" max="6" step="0.25" value="2" oninput="penState.infl=+this.value/100;document.getElementById('lPenInfl').textContent=this.value+'%';renderPensione()">
       </div>
       <div class="pblock" style="margin-bottom:10px">
-        <div class="plabel"><span>Crescita reale RAL attesa</span><span class="pval" id="lPenRalG">0.5%/a</span></div>
-        <input type="range" id="sPenRalG" min="0" max="3" step="0.25" value="0.5" oninput="penState.ralGrowth=+this.value/100;document.getElementById('lPenRalG').textContent=this.value+'%/a';renderPensione()">
-        <div style="font-size:11px;color:var(--text3);margin-top:4px">Crescita oltre l'inflazione. Pubblico impiego o carriera stabile: 0-0,5%. Carriera privata con avanzamenti: 1-2%.</div>
+        <div class="plabel"><span>Crescita reale RAL attesa</span><span class="pval" id="lPenRalG">1.5%/a</span></div>
+        <input type="range" id="sPenRalG" min="0" max="3" step="0.25" value="1.5" oninput="penState.ralGrowth=+this.value/100;document.getElementById('lPenRalG').textContent=this.value+'%/a';renderPensione()">
+        <div style="font-size:11px;color:var(--text3);margin-top:4px">Crescita oltre l'inflazione. Riferimento RGS (produttività per occupato): circa 1,5%. Carriera stabile o pubblico impiego: 0,5-1%; carriera con avanzamenti: 2% e oltre. Se è sotto l'1% (rivalutazione del montante con il PIL) il tasso di sostituzione risulta più alto.</div>
       </div>
       <details id="penRalChBox" style="margin:2px 0 12px;border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px 12px">
         <summary style="cursor:pointer;font-size:12.5px;font-weight:600;color:var(--text)">Variazioni di RAL nella carriera (opzionale)</summary>
