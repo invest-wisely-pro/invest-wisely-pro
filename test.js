@@ -423,7 +423,8 @@ function suitePensione() {
     const C = global.PEN_CATEGORIE;
     ok(C.priv.aliq === 0.33 && C.pub.aliq === 0.33 && C.gs.aliq === 0.25 && C.artcom.aliq === 0.24, 'Aliquote pensionistiche per categoria (33/33/25/24%)');
     ok(!C.gs.dip && !C.artcom.dip && C.priv.dip && C.pub.dip, 'TFR e datore solo per i dipendenti');
-    ok(global.penState.ralGrowth === 0.015 && global.penState.categoria === 'priv', 'Default: crescita RAL 1,5% (RGS), dipendente privato');
+    ok(global.penState.ralGrowth === 0.010 && global.penState.pil === 0.006 && global.penState.categoria === 'priv', 'Default tarati RGS: crescita RAL 1,0%, PIL 0,6%, dipendente privato');
+    ok(C.priv.ralG === 0.010 && C.pub.ralG === 0.005 && C.gs.ralG === 0.010 && C.artcom.ralG === 0.010, 'Crescita RAL predefinita per categoria (1,0% / 0,5% pubblici)');
   } else warn('PEN_CATEGORIE non trovata');
 
   // 6.a Coefficienti di trasformazione ufficiali (DM 436/2024)
@@ -446,6 +447,7 @@ function suitePensione() {
     if (r) {
       ok(isFinite(r.pensioneLordaAnn) && r.pensioneLordaAnn > 0, 'Pensione lorda annua finita e positiva', Math.round(r.pensioneLordaAnn));
       ok(r.pensioneNettaMens < r.pensioneLordaMens, 'Pensione netta < lorda (tasse applicate)');
+      ok(Math.abs(r.addizAnn - r.pensioneLordaAnn * 0.02) <= 1 && Math.abs(r.pensioneNettaAnn - (r.pensioneLordaAnn - r.irpefAnn - r.addizAnn)) <= 2, 'Addizionali 2% incluse: netto = lordo - IRPEF - addizionali', r.addizAnn);
       ok(r.tassoSost > 0.3 && r.tassoSost < 0.95, 'Tasso sostituzione plausibile (30-95%)', (r.tassoSost*100).toFixed(0)+'%');
       ok(isFinite(r.rendFPMens) && r.rendFPMens >= 0, 'Rendita fondo pensione finita');
       // 6.d REGRESSIONE: l'ETF nel grafico annuale deve riflettere il prelievo SWR pieno,
