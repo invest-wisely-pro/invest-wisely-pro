@@ -156,20 +156,21 @@
         <li><a href="#g2">Scheda 1 — Simulatore (input principali)</a></li>
         <li><a href="#g3">Scheda 2 — Scenari Economici</a></li>
         <li><a href="#g4">Scheda 3 — A/B Confronto</a></li>
-        <li><a href="#g5">Scheda 4 — Probabilità di Successo (Monte Carlo)</a></li>
-        <li><a href="#g6">Scheda 5 — Decumulo</a></li>
-        <li><a href="#g8">Scheda 6 — Monte Carlo Avanzato</a></li>
-        <li><a href="#g7bt">Scheda 7 — Backtesting Storico</a></li>
-        <li><a href="#g9">Scheda 8 — Fiscalità IT</a></li>
+        <li><a href="#gpen">Scheda 4 — Piano Pensione</a></li>
+        <li><a href="#g9">Scheda 5 — Fiscalità IT</a></li>
+        <li><a href="#g5">Scheda 6 — Probabilità di Successo (Monte Carlo)</a></li>
+        <li><a href="#g6">Scheda 7 — Decumulo</a></li>
+        <li><a href="#g8">Scheda 8 — Monte Carlo Avanzato</a></li>
+        <li><a href="#g7bt">Scheda 9 — Backtesting Storico</a></li>
         <li><a href="#g10">Sequence Risk multiplo, PIC e spese straordinarie</a></li>
         <li><a href="#g10b">Decumulo Storico su Sequenze Reali (Trinity-style)</a></li>
         <li><a href="#g10c">Cambio EUR/USD e Volatilità di Stress</a></li>
         <li><a href="#g11">Come leggere il Report PDF ed Excel</a></li>
         <li><a href="#g12">Errori comuni &amp; consigli pratici</a></li>
         <li><a href="#g13">💾 Scenari Salvati</a></li>
-        <li><a href="#g14">🏆 Obiettivo Inverso</a></li>
+        <li><a href="#g14">Scheda 11 — Obiettivo Inverso</a></li>
         <li><a href="#g15">⚠️ Avvisi Contestuali</a></li>
-        <li><a href="#g16">📐 Quant Analytics</a></li>
+        <li><a href="#g16">Scheda 12 — Quant Analytics</a></li>
       </ol>
     </div>
 
@@ -251,8 +252,43 @@
       <div class="guide-impact"><b>Esempi d'uso:</b> "Conviene investire €5.000 ora in PIC o spalmarli su 24 mesi di PAC aggiuntivo?" — oppure "Quanto mi costa il fondo attivo (TER 1,5%) vs un ETF equivalente (TER 0,20%) su 25 anni?" → imposta i due piani e leggi il delta finale.</div>
     </div>
 
+    <div class="guide-sec" id="gpen">
+      <h2><span class="num">5</span> Scheda <b>Piano Pensione</b></h2>
+      <p>Stima la pensione pubblica <b>INPS</b> (metodo contributivo) e quella del <b>fondo pensione</b> complementare, e calcola quanta parte del reddito desiderato copriranno. Conviene compilarla <b>prima</b> delle schede Probabilità di Successo e Decumulo, che possono usarne i risultati.</p>
+      <h3>Cosa inserire</h3>
+      <ul>
+        <li><b>Età</b> attuale e di pensionamento, anni di contributi già versati.</li>
+        <li><b>RAL</b> lorda e crescita reale attesa; eventuali <b>variazioni di carriera</b> (fino a 10), indicate in euro di oggi. Nella tabella di accumulo ogni riga è un anno indicato con l'età a fine anno: una variazione "dai 42 anni" compare nella riga 43.</li>
+        <li><b>Fondo pensione</b>: versamento mensile, contributo del datore e del lavoratore (fondi negoziali), destinazione del TFR.</li>
+        <li><b>Capitale ETF</b>: si importa dal Simulatore; se poi cambi il Simulatore compare un avviso finché non lo reimporti.</li>
+      </ul>
+      <h3>Come calcola</h3>
+      <ul>
+        <li>Contributi INPS pari al 33% della RAL, rivalutati ogni anno; pensione = montante × <b>coefficiente di trasformazione</b> (tabella in vigore dal 1° gennaio 2027, D.D. 16/10/2026), con un calo stimato dello 0,3% l'anno per gli aggiornamenti futuri.</li>
+        <li><b>IRPEF 2026</b> con scaglioni al 23%, 33% e 43% e detrazione per pensionati; soglie e detrazioni sono aggiornate all'inflazione, così una pensione futura non viene tassata con le soglie di oggi.</li>
+        <li>Fondo pensione: contributi <b>deducibili fino a 5.300 €</b> l'anno (TFR escluso); la rendita è tassata dal 15% fino al 9% in base agli anni di partecipazione; il risparmio IRPEF annuale può essere reinvestito.</li>
+      </ul>
+      <h3>Collegamento con le altre schede</h3>
+      <p>Nelle schede <b>Probabilità di Successo</b> e <b>Decumulo</b> l'interruttore della pensione fa pagare al portafoglio solo la spesa che pensione INPS e fondo pensione non coprono, con un eventuale "ponte" se smetti di lavorare prima della pensione. Il pulsante <b>Report Pensione</b> genera un PDF di due pagine con tutti i dettagli.</p>
+      <div class="guide-callout">Sono stime illustrative basate sulla normativa vigente: non sostituiscono l'estratto conto contributivo INPS né la consulenza di un professionista.</div>
+    </div>
+    <div class="guide-sec" id="g9">
+      <h2><span class="num">6</span> Scheda <b>Fiscalità IT</b> 🏛️</h2>
+      <p>Analisi completa della fiscalità italiana sugli investimenti finanziari. Calcola l'impatto reale delle tasse sui rendimenti e confronta i diversi regimi e metodi di calcolo delle plusvalenze.</p>
+      <h3>Confronto regimi fiscali</h3>
+      <p>La tabella <b>"Confronto Regimi e Metodi"</b> simula il piano completo nei due regimi, ognuno con il metodo previsto dalla normativa:</p>
+      <ul>
+        <li><b>Amministrato — costo medio ponderato</b>: la banca calcola e versa le imposte; il costo fiscale è la media ponderata dei prezzi di acquisto. Il più semplice.</li> <li><b>Dichiarativo — LIFO</b>: dichiari tu nel Modello Redditi; si considerano vendute per prime le quote acquistate più di recente (art. 67 c.1-bis TUIR). Con un PAC sono di solito le meno rivalutate, quindi in una vendita parziale parte dell'imposta può slittare.</li> <li><b>Confronto: FIFO</b>: vende per prime le quote più vecchie. È il criterio usato da molti broker esteri, ma non quello previsto dalla normativa italiana: in dichiarativo il costo va ricalcolato con il LIFO. Utile per capire la differenza.</li> <li>Il metodo non si sceglie: dipende dal regime. In nessuno dei due regimi le minusvalenze si compensano con i guadagni degli ETF UCITS (redditi di capitale).</li>
+      </ul>
+      <h3>Imposta di bollo</h3>
+      <p>Pari allo 0,20% annuo sul valore del dossier titoli (D.L. 201/2011). Applicata al saldo medio annuo. La sezione mostra l'accumulo del bollo nel tempo: a 30 anni può erodere il 4–6% del capitale.</p>
+      <h3>Zainetto fiscale (minusvalenze pregresse)</h3>
+      <p>Inserisci le minusvalenze maturate negli ultimi 4 anni per vedere quanto risparmio fiscale puoi ancora sfruttare. Le minusvalenze scadono 4 anni dopo la loro maturazione. In regime dichiarativo, possono compensare qualsiasi tipo di plusvalenza; in regime amministrato solo le plusvalenze da "redditi diversi" (non ETF armonizzati).</p>
+      <div class="guide-callout"><b>Nota:</b> la fiscalità sugli strumenti finanziari italiani è complessa e soggetta a modifiche normative. Le simulazioni hanno scopo illustrativo. Per decisioni fiscali concrete consulta un commercialista o consulente fiscale abilitato.</div>
+    </div>
+
     <div class="guide-sec" id="g5">
-      <h2><span class="num">5</span> Scheda <b>Probabilità di Successo (Monte Carlo)</b></h2>
+      <h2><span class="num">7</span> Scheda <b>Probabilità di Successo (Monte Carlo)</b></h2>
       <p>Esegue 1.000 simulazioni del piano tramite <b>Monte Carlo parametrico</b> (Gaussiano log-normale corretto, correzione Itō). Usa il rendimento atteso e la volatilità storica del portafoglio selezionato. Restituisce la <b>distribuzione completa</b> dei possibili esiti finali — accumulo + prelievo — calcolando la probabilità che il portafoglio non si azzeri.</p>
       <ul>
         <li><b>P10</b> = 90% degli scenari fa meglio di questo (peggior 10% degli esiti). Usa questo come soglia di sicurezza.</li>
@@ -267,7 +303,7 @@
     </div>
 
     <div class="guide-sec" id="g6">
-      <h2><span class="num">6</span> Scheda <b>Decumulo</b></h2>
+      <h2><span class="num">8</span> Scheda <b>Decumulo</b></h2>
       <p>Simula la <b>fase di prelievo</b> post-accumulo: come il capitale verrà eroso o conservato nel tempo. Puoi importare automaticamente il valore finale simulato dal Simulatore o inserirlo manualmente. Tre strategie disponibili:</p>
       <ul>
         <li><b>Fisso Nominale</b> — prelievo costante in cifra assoluta ogni anno. Semplice ma non protegge dall'inflazione.</li>
@@ -280,7 +316,7 @@
     </div>
 
     <div class="guide-sec" id="g8">
-      <h2><span class="num">6</span> Scheda <b>Monte Carlo Avanzato</b> 🧮</h2>
+      <h2><span class="num">9</span> Scheda <b>Monte Carlo Avanzato</b> 🧮</h2>
       <p>Quattro modelli stocastici avanzati rispetto alla gaussiana standard. Permettono di simulare distribuzioni di rendimento più realistiche, con crash più frequenti e volatilità variabile nel tempo.</p>
       <h3>Modelli disponibili</h3>
       <ul>
@@ -296,7 +332,7 @@
     </div>
 
     <div class="guide-sec" id="g7bt">
-      <h2><span class="num">7</span> Scheda <b>Backtesting Storico</b> 📅</h2>
+      <h2><span class="num">10</span> Scheda <b>Backtesting Storico</b> 📅</h2>
       <p>Il Backtesting Storico risponde alla domanda <b>"Cosa sarebbe successo se avessi iniziato il mio piano in un anno specifico?"</b> — usando i rendimenti mensili effettivi reali 1970–2024 (non simulazioni parametriche). È la verifica più concreta della robustezza del tuo piano.</p>
       <h3>Come funziona il motore</h3>
       <p>Il simulatore usa 672 osservazioni mensili (Gen 1970 – Dic 2025). Le tre asset class di base &mdash; <b>azioni mercati sviluppati</b> (MSCI World equiv.), <b>obbligazioni aggregate</b> (Bloomberg Euro Agg equiv.) e <b>oro spot</b> &mdash; hanno serie mensile ricostruita: totali annui e mesi-crisi chiave reali (azioni mondiali mensili effettive su tutto il periodo 1970-2025, v. sopra). Gli asset aggiuntivi (fattori azionari Small Cap Value, Momentum, Value, Quality, Investment, Size; Bassa Volatilità; Immobiliare Quotato REITs; Mercati Emergenti) usano <b>serie storiche reali dedicate</b> (Kenneth French Data Library, AQR, FTSE Nareit) convertite in EUR, anziché comportarsi come proxy del mercato sviluppato. I pesi del portafoglio selezionato vengono applicati ai rendimenti mensili di ogni periodo. Il TER viene sottratto mensilmente. Il PAC viene aggiunto a inizio mese prima di applicare il rendimento.</p>
@@ -323,23 +359,8 @@
       <div class="guide-callout"><b>Limite importante:</b> il backtesting usa dati azioni sviluppati / bond aggregati / oro in USD. I risultati reali in EUR dipendono anche dall'effetto valutario (EUR/USD), non incluso. I dati 2023–2024 sono le ultime osservazioni disponibili. Le performance passate non garantiscono quelle future.</div>
     </div>
 
-    <div class="guide-sec" id="g9">
-      <h2><span class="num">9</span> Scheda <b>Fiscalità IT</b> 🏛️</h2>
-      <p>Analisi completa della fiscalità italiana sugli investimenti finanziari. Calcola l'impatto reale delle tasse sui rendimenti e confronta i diversi regimi e metodi di calcolo delle plusvalenze.</p>
-      <h3>Confronto regimi fiscali</h3>
-      <p>La tabella <b>"Confronto Regimi e Metodi"</b> simula il piano completo nei due regimi, ognuno con il metodo previsto dalla normativa:</p>
-      <ul>
-        <li><b>Amministrato — costo medio ponderato</b>: la banca calcola e versa le imposte; il costo fiscale è la media ponderata dei prezzi di acquisto. Il più semplice.</li> <li><b>Dichiarativo — LIFO</b>: dichiari tu nel Modello Redditi; si considerano vendute per prime le quote acquistate più di recente (art. 67 c.1-bis TUIR). Con un PAC sono di solito le meno rivalutate, quindi in una vendita parziale parte dell'imposta può slittare.</li> <li><b>Confronto: FIFO</b>: vende per prime le quote più vecchie. È il criterio usato da molti broker esteri, ma non quello previsto dalla normativa italiana: in dichiarativo il costo va ricalcolato con il LIFO. Utile per capire la differenza.</li> <li>Il metodo non si sceglie: dipende dal regime. In nessuno dei due regimi le minusvalenze si compensano con i guadagni degli ETF UCITS (redditi di capitale).</li>
-      </ul>
-      <h3>Imposta di bollo</h3>
-      <p>Pari allo 0,20% annuo sul valore del dossier titoli (D.L. 201/2011). Applicata al saldo medio annuo. La sezione mostra l'accumulo del bollo nel tempo: a 30 anni può erodere il 4–6% del capitale.</p>
-      <h3>Zainetto fiscale (minusvalenze pregresse)</h3>
-      <p>Inserisci le minusvalenze maturate negli ultimi 4 anni per vedere quanto risparmio fiscale puoi ancora sfruttare. Le minusvalenze scadono 4 anni dopo la loro maturazione. In regime dichiarativo, possono compensare qualsiasi tipo di plusvalenza; in regime amministrato solo le plusvalenze da "redditi diversi" (non ETF armonizzati).</p>
-      <div class="guide-callout"><b>Nota:</b> la fiscalità sugli strumenti finanziari italiani è complessa e soggetta a modifiche normative. Le simulazioni hanno scopo illustrativo. Per decisioni fiscali concrete consulta un commercialista o consulente fiscale abilitato.</div>
-    </div>
-
     <div class="guide-sec" id="g10">
-      <h2><span class="num">10</span> Sequence Risk multiplo, PIC e spese straordinarie</h2>
+      <h2><span class="num">11</span> Sequence Risk multiplo, PIC e spese straordinarie</h2>
       <h3>Sequence Risk — Crash singolo e multiplo</h3>
       <p>Attivalo nella scheda Simulatore per sovrapporre uno o più crash di mercato con severità configurabile (lieve −20%, moderato −35%, severo −50%). Due modalità disponibili:</p>
       <ul>
@@ -357,7 +378,7 @@
     </div>
 
     <div class="guide-sec" id="g10b">
-      <h2><span class="num">10b</span> Decumulo Storico su Sequenze Reali</h2>
+      <h2><span class="num">12</span> Decumulo Storico su Sequenze Reali</h2>
       <p>Nella scheda <b>Decumulo</b> trovi il pulsante <b>📅 Esegui Backtest Storico</b>. È il test più severo del sequence risk: ripercorre il piano di prelievo su <b>tutti gli anni di partenza disponibili (1970-1994 per piani 30 anni)</b> usando i rendimenti mensili storici reali calibrati e l'inflazione effettiva di ogni anno.</p>
 
       <h3>Come funziona</h3>
@@ -384,7 +405,7 @@
     </div>
 
     <div class="guide-sec" id="g10c">
-      <h2><span class="num">10c</span> Cambio EUR/USD e Volatilità di Stress</h2>
+      <h2><span class="num">13</span> Cambio EUR/USD e Volatilità di Stress</h2>
       <p>Due elementi avanzati introdotti nella scheda <b>Portafoglio Custom</b> per portare il modello al livello dei tool professionali.</p>
 
       <h3>Esposizione FX e Hedging</h3>
@@ -409,7 +430,7 @@
     </div>
 
     <div class="guide-sec" id="g11">
-      <h2><span class="num">11</span> Come leggere il Report PDF ed Excel</h2>
+      <h2><span class="num">14</span> Come leggere il Report PDF ed Excel</h2>
       <h3>Report PDF (10–15 pagine)</h3>
       <p>Il pulsante <b>"Scarica Report PDF"</b> nella scheda Simulatore genera un documento completo con:</p>
       <ul>
@@ -439,7 +460,7 @@
     </div>
 
     <div class="guide-sec" id="g12">
-      <h2><span class="num">12</span> Errori comuni &amp; consigli pratici</h2>
+      <h2><span class="num">15</span> Errori comuni &amp; consigli pratici</h2>
       <ul>
         <li><b>Usare solo lo scenario base</b> → guarda sempre la fan chart e il P10/P25. Il P50 è spesso troppo ottimista. Il tab Monte Carlo Avanzato (Regime-Switching, t-Student) dà percentili con code più pesanti e più realistici per la pianificazione conservativa.</li>
         <li><b>Sottostimare l'inflazione</b> → in Italia la media storica è ~2–3%, ma fasi al 5–7% non sono rare. Testa il piano anche con inflazione al 4%.</li>
@@ -453,7 +474,7 @@
     </div>
 
     <div class="guide-sec" id="g13">
-      <h2><span class="num">13</span> 💾 Scenari Salvati</h2>
+      <h2><span class="num">16</span> 💾 Scenari Salvati</h2>
       <p>Il pannello <b>Scenari Salvati</b> è visibile in cima al tab Simulatore. Permette di salvare, ricaricare ed eliminare configurazioni complete con nome personalizzato. Tutto viene conservato nel tuo browser (localStorage) — nessun dato viene inviato a server esterni.</p>
       <h3>Come funziona</h3>
       <ul>
@@ -471,7 +492,7 @@
     </div>
 
     <div class="guide-sec" id="g14">
-      <h2><span class="num">14</span> 🏆 Obiettivo Inverso</h2>
+      <h2><span class="num">17</span> 🏆 Obiettivo Inverso</h2>
       <p>Il tab <b>Obiettivo Inverso</b> risponde alla domanda inversa rispetto al Simulatore: invece di "dato il PAC, quanto accumulo?", calcola cosa serve per raggiungere un obiettivo dato. Usa gli stessi parametri di portafoglio e TER del simulatore principale.</p>
       <h3>Tre modalità</h3>
       <ul>
@@ -493,7 +514,7 @@
     </div>
 
     <div class="guide-sec" id="g15">
-      <h2><span class="num">15</span> ⚠️ Avvisi Contestuali</h2>
+      <h2><span class="num">18</span> ⚠️ Avvisi Contestuali</h2>
       <p>La suite mostra automaticamente avvisi colorati sopra le metriche del Simulatore quando rileva configurazioni potenzialmente problematiche. Gli avvisi si aggiornano in tempo reale ad ogni modifica dei parametri e scompaiono quando il problema viene risolto.</p>
       <h3>Tipi di avviso</h3>
       <ul>
@@ -509,7 +530,7 @@
     </div>
 
     <div class="guide-sec" id="g16">
-      <h2><span class="num">16</span> 📐 Quant Analytics</h2>
+      <h2><span class="num">19</span> 📐 Quant Analytics</h2>
       <p>Il tab <b>Quant Analytics</b> raccoglie cinque strumenti di analisi quantitativa professionale del portafoglio. Tutti si sincronizzano automaticamente con il portafoglio impostato nel Simulatore tramite il pulsante <b>↩ Importa dal Simulatore</b>.</p>
 
       <h3>📈 Frontiera Efficiente di Markowitz</h3>
@@ -676,12 +697,12 @@
   <button class="tab-btn active" data-tab="main" onclick="switchTab('main')">Simulatore <span style="opacity:.6;font-weight:400">(Accumulo)</span></button>
   <button class="tab-btn" data-tab="scenarios" onclick="switchTab('scenarios')">Scenari Economici</button>
   <button class="tab-btn" data-tab="ab" onclick="switchTab('ab')">A/B Confronto</button>
+  <button class="tab-btn" data-tab="pensione" onclick="switchTab('pensione')">Piano Pensione</button>
+  <button class="tab-btn" data-tab="fiscale" onclick="switchTab('fiscale')">Fiscalità IT</button>
   <button class="tab-btn" data-tab="mc" onclick="switchTab('mc')">Prob. Successo</button>
   <button class="tab-btn" data-tab="decumulo" onclick="switchTab('decumulo')">Decumulo</button>
   <button class="tab-btn" data-tab="advmc" onclick="switchTab('advmc')">MC Avanzato</button>
   <button class="tab-btn" data-tab="backtest" onclick="switchTab('backtest')">Backtesting Storico</button>
-  <button class="tab-btn" data-tab="fiscale" onclick="switchTab('fiscale')">Fiscalità IT</button>
-  <button class="tab-btn" data-tab="pensione" onclick="switchTab('pensione')">Piano Pensione</button>
   <button class="tab-btn" data-tab="valuation" onclick="switchTab('valuation')">Stress Valutazioni</button>
   <button class="tab-btn" data-tab="goal" onclick="switchTab('goal')">Obiettivo Inverso</button>
   <button class="tab-btn" data-tab="quant" onclick="switchTab('quant')">Quant Analytics</button>
