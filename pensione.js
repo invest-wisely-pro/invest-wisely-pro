@@ -28,6 +28,8 @@ let penState = {
   categoria:  'priv',  // 'priv' | 'pub' | 'gs' (P.IVA Gestione separata) | 'artcom' (artigiano/commerciante)
   forfettario: false,  // solo autonomi: regime forfettario -> versamenti FP non deducibili dal reddito forfettario
   addiz:      0.02,    // addizionali regionale + comunale sulla pensione (media ~2%; reg. 1,23-3,33%, com. 0-0,8%)
+  sesso:      'm',     // 'm' | 'f': requisiti di pensione anticipata e soglie
+  figli:      0,       // 0 | 1 | 2 | 3 (= tre o piu'): soglia ridotta per le donne nell'anticipata contributiva
   penVer:     3,       // versione dei default (2 = crescita RAL RGS 1,5%)
   montante:   0,       // montante contributivo già accumulato
   desired:    2000,    // spesa mensile desiderata in pensione (€ oggi)
@@ -100,6 +102,8 @@ function loadPenStateLS() {
     }
     penState.ralChanges = sanitizeRalChanges(penState.ralChanges);
     if (!PEN_CATEGORIE[penState.categoria]) penState.categoria = 'priv';
+    if (penState.sesso !== 'f') penState.sesso = 'm';
+    penState.figli = Math.max(0, Math.min(3, Math.round(+penState.figli || 0)));
     // Migrazione: chi aveva il vecchio default (0,5%) passa al nuovo (1,5%, RGS); una scelta diversa resta.
     // Migrazione ai default tarati sulla RGS: i vecchi valori predefiniti passano ai nuovi, una scelta personale resta.
     if (!(snap.penVer >= 3)) {
@@ -141,6 +145,8 @@ function syncPenControls() {
   setBtn('penRegimeBtns', 'data-reg', penState.regime);
   setBtn('penCatBtns', 'data-cat', penState.categoria || 'priv');
   setBtn('penForfBtns', 'data-forf', penState.forfettario ? 'si' : 'no');
+  setBtn('penSessoBtns', 'data-sesso', penState.sesso === 'f' ? 'f' : 'm');
+  setBtn('penFigliBtns', 'data-figli', String(penState.figli || 0));
   penApplyCatUI();
   setBtn('penTFRBtns', 'data-tfr', penState.tfrSi ? 'si' : 'no');
   setBtn('penNegozialeBtns', 'data-neg', penState.isNegoziale ? 'si' : 'no');
@@ -236,8 +242,8 @@ function fmtP(v) {
 //   >=18 anni al 31/12/1995 -> RETRIBUTIVO fino al 31/12/2011, contributivo dal 2012 (Fornero)
 const PEN_REGIME_DESC = {
   contributivo: `<strong>Contributivo puro (L. 335/1995):</strong> per chi ha iniziato a versare dal 1° gennaio 1996 (nessun contributo ante-1996).
-    Il montante individuale (contributi della tua categoria: 33% della retribuzione per i dipendenti, 25% o 24% del reddito per gli autonomi, entro il massimale contributivo: €120.607 nel 2025, indicizzato) viene rivalutato annualmente al tasso di capitalizzazione (media quinquennale PIL nominale).
-    La pensione lorda = montante × coefficiente di trasformazione (per età). <em>Pensione minima di importo almeno pari all'assegno sociale × 1,5 per accedere a 64 anni.</em>`,
+    Il montante individuale (contributi della tua categoria: 33% della retribuzione per i dipendenti, 25% o 24% del reddito per gli autonomi, entro il massimale contributivo: €122.295 nel 2026, indicizzato) viene rivalutato annualmente al tasso di capitalizzazione (media quinquennale PIL nominale).
+    La pensione lorda = montante × coefficiente di trasformazione (per età). <em>Per uscire a 64 anni con la pensione anticipata contributiva (64 anni e 1 mese nel 2027, 64 e 3 mesi nel 2028) servono almeno 20 anni di contributi effettivi e una pensione pari ad almeno 3 volte l'assegno sociale (circa 21.300 € lordi l'anno nel 2026; 2,8 volte per le donne con un figlio, 2,6 con due o più; 3,2 volte dal 2030). Il simulatore non verifica questo requisito.</em>`,
   misto: `<strong>Sistema misto (L. 335/1995):</strong> per chi aveva contributi al 31/12/1995 ma <strong>meno di 18 anni</strong>.
     La quota maturata fino al 31/12/1995 è retributiva (~2% della retribuzione pensionabile per anno di anzianità ante-1996); dal 1° gennaio 1996 in poi il calcolo è contributivo.
     Il modello calcola le due quote separatamente — il montante contributivo considera SOLO gli anni post-1995 — e le somma.`,
@@ -309,11 +315,11 @@ function calcPensione() {
   // (2) stimaMontanteDa(annoTaglio) permette di scorporare la quota post-taglio per
   // misto (post-1995) e retributivo-Fornero (post-2011), eliminando il DOPPIO CONTEGGIO
   // (prima la quota contributiva del misto includeva anche gli anni già pagati dalla
-  // quota retributiva). (3) massimale contributivo (€120.607/2025, art.2 c.18 L.335/95)
+  // quota retributiva). (3) massimale contributivo (€122.295/2026, art.2 c.18 L.335/95)
   // applicato SOLO al contributivo puro, come da norma.
   const curYear = new Date().getFullYear();
   const annoInizioContrib = curYear - contYears;
-  const MASSIMALE_2025 = 120607;
+  const MASSIMALE_2026 = 122295; // massimale contributivo 2026 (circ. INPS 8/2026); era 120.607 nel 2025
   const stimaMontanteDa = (annoDa) => {
     let stima = 0;
     for (let k = contYears - 1; k >= 0; k--) {        // k = anni fa (dal più vecchio)
@@ -321,7 +327,7 @@ function calcPensione() {
       const capitalizza = stima * (1 + pil);
       if (annoK < annoDa) { stima = capitalizza; continue; } // ante-taglio: fuori quota
       let ralPassata = ral / Math.pow(1 + ralGrowth, k);
-      if (regime === 'contributivo') ralPassata = Math.min(ralPassata, MASSIMALE_2025);
+      if (regime === 'contributivo') ralPassata = Math.min(ralPassata, MASSIMALE_2026);
       stima = capitalizza + ralPassata * aliqCont;
     }
     return stima;
@@ -361,7 +367,7 @@ function calcPensione() {
   for (let y = 0; y < yearsToRet; y++) {
     const curRal     = ralPath[y];
     const baseCont   = regime === 'contributivo'
-      ? Math.min(curRal, MASSIMALE_2025 * Math.pow(1 + infl, y + 1))  // massimale indicizzato
+      ? Math.min(curRal, MASSIMALE_2026 * Math.pow(1 + infl, y))  // massimale indicizzato dal 2026
       : curRal;                                                        // non si applica ad ante-1996
     const contAnn    = baseCont * aliqCont;
     cumMontante      = cumMontante * (1 + rateCapIT) + contAnn;
@@ -445,7 +451,9 @@ function calcPensione() {
   }
 
   // ── 3. Pensione INPS lorda ─────────────────────────────
-  const coeffTrasfBase = getCoeffTrasf(retAge);
+  // Lavoratrici madri nel contributivo: coefficiente di un'eta' piu' alta, se e' l'agevolazione applicata
+  const _madreScelta   = penMadreScelta();
+  const coeffTrasfBase = getCoeffTrasf(retAge + (_madreScelta === 'coeff' ? penMadre().k : 0));
   // il calo stimato parte dal 2027: la tabella in uso incorpora gia' la revisione di quell'anno
   const _anniDecl      = Math.max(0, yearsToRet - Math.max(0, 2027 - new Date().getFullYear()));
   const coeffTrasf     = coeffTrasfBase * Math.pow(1 - (penState.coeffDecl ?? 0), _anniDecl);
@@ -601,7 +609,7 @@ function calcPensione() {
     pensioneNettaAnn:  Math.round(pensioneNettaAnn),
     irpefAnn:          Math.round(irpefAnn),
     addizAnn:          Math.round(addizAnn),
-    tassoSost, coeffTrasf, coeffTrasfBase,
+    tassoSost, coeffTrasf, coeffTrasfBase, madre: _madreScelta,
     cumMontante:       Math.round(cumMontante),
     montanteIniziale:  Math.round(montanteIniziale),
     capFP:             Math.round(capFP),
@@ -837,6 +845,7 @@ async function generatePensionePDF() {
         ...(_ralApplicate.length ? [['Variazioni di RAL (euro di oggi)', { content: _ralApplicate.map(c => c.age + ' anni: ' + fmtP(c.ral)).join(' · '), colSpan: 3 }]] : []),
         ['Versamento mensile Fondo Pensione', fmtP(penState.fpVers) + '/mese', 'Rendimento atteso Fondo Pensione', (penState.fpRet * 100).toFixed(1) + '%/a lordo'],
         ['Categoria lavorativa', penCat().label + (penCat().dip ? '' : (penState.forfettario ? ' (forfettario)' : ' (regime ordinario)')), 'Aliquota contributiva e rivalutazione del montante', (penCat().aliq * 100).toFixed(0) + '% - PIL reale ' + ((penState.pil ?? 0.006) * 100).toFixed(1) + '%/a'],
+        ['Requisiti di accesso (verifica indicativa)', { content: (() => { try { const t = penRequisitiTesto(); return t.txt + (t.nota || ''); } catch (e) { return '-'; } })(), colSpan: 3 }],
         ...(penCat().dip ? [['TFR versato al Fondo', penState.tfrSi ? 'Si' : 'No', 'Fondo negoziale (contributo datoriale)', penState.isNegoziale ? 'Si' : 'No']] : []),
         [penState.etfBridgeYears > 0 ? `Capitale ETF al pensionamento (dopo ${penState.etfBridgeYears} anni di ponte)` : 'Capitale ETF stimato al pensionamento', fmtP(penState.etfCapital) + (penEtfStale() ? ' (DA REIMPORTARE: il Simulatore e cambiato)' : ''), 'Rendimento ETF netto atteso', (penState.etfRet * 100).toFixed(1) + '%/a'],
       ],
@@ -1069,6 +1078,7 @@ function renderPenEtfStale() {
 
 function renderPensione() {
   savePenStateLS(); // ogni modifica della scheda passa da qui
+  try { penRenderRequisiti(); } catch (e) {}
   try { renderPenRalChanges(); } catch (e) {}
   try { renderPenEtfStale(); } catch (e) {}
   try {
@@ -1086,7 +1096,7 @@ function renderPensione() {
         const yrLeg   = Math.round(nowY + (etaLeg - penState.age));
         const etaCtr  = Math.min(71.25, etaLeg + 4); // canale contributivo: 71 (71a3m dal 2028), adeguato
         if (penState.retAge < etaLeg - 1/24) {
-          lawHint.innerHTML = `⚠️ Sotto l'<strong>età di vecchiaia stimata per te: ${fmtEta(etaLeg)}</strong> (nel ${yrLeg}, adeguamenti speranza di vita RGS). Uscire prima richiede la <strong>pensione anticipata</strong> (43a 2m di contributi dal 2028, anch'essi in crescita) o canali dedicati (APE, usuranti).`;
+          lawHint.innerHTML = `⚠️ Sotto l'<strong>età di vecchiaia stimata per te: ${fmtEta(etaLeg)}</strong> (nel ${yrLeg}, adeguamenti speranza di vita RGS). Uscire prima richiede la <strong>pensione anticipata</strong> (dal 2028: 43 anni e 1 mese di contributi per gli uomini, 42 anni e 1 mese per le donne, in crescita con la speranza di vita) o canali dedicati (APE, usuranti).`;
           lawHint.style.color = 'var(--orange)';
         } else {
           lawHint.innerHTML = `✓ Compatibile con l'età di vecchiaia stimata per te: <strong>${fmtEta(etaLeg)}</strong> nel ${yrLeg} (tabellare adeguamenti ISTAT/RGS).${penState.retAge >= 71 ? ` A 71+ rientri anche nel canale <strong>vecchiaia contributiva</strong> (71a, 71a3m dal 2028, bastano 5 anni di contributi effettivi).` : ''}`;
@@ -1677,6 +1687,7 @@ function penApplyCatUI() {
   if (dipB) dipB.style.display = c.dip ? '' : 'none';
   if (autB) autB.style.display = c.dip ? 'none' : '';
   const desc = document.getElementById('penCatDesc'); if (desc) desc.textContent = c.desc;
+  const fb = document.getElementById('penFigliBtns'); if (fb) fb.style.display = penState.sesso === 'f' ? '' : 'none';
   const nm = document.getElementById('lPenRALName'); if (nm) nm.textContent = c.dip ? 'RAL attuale (lordo annuo)' : 'Reddito imponibile annuo (lordo)';
 }
 window.penApplyCatUI = penApplyCatUI;
@@ -1700,3 +1711,89 @@ document.addEventListener('DOMContentLoaded', () => {
   };
   penApplyCatUI();
 });
+
+// ── Verifica indicativa dei requisiti di accesso alla pensione (2026-11-13) ───
+// Regole in vigore: vecchiaia 67 anni + 20 di contributi (contributivo puro: pensione almeno pari
+// all'assegno sociale; in alternativa 71 anni + 5 di contributi); anticipata 42a10m uomini / 41a10m
+// donne; anticipata contributiva 64 anni + 20 di contributi + pensione >= 3 volte l'assegno sociale
+// (2,8 donne con un figlio, 2,6 con due o piu'; 3,2 dal 2030). Tutti i requisiti crescono con la
+// speranza di vita come l'eta' di vecchiaia (2027 +1 mese, 2028 +3 mesi: circ. INPS 28/2026).
+var PEN_ASSEGNO_SOCIALE_2026 = 546.24 * 13; // euro l'anno
+function penRequisiti(r, scontoOverride) {
+  const nowY = new Date().getFullYear(), retAge = penState.retAge;
+  const anniAl = Math.max(0, retAge - penState.age), anno = nowY + anniAl;
+  const delta = getEtaVecchiaiaLegale(anno) - 67;
+  const anni = penState.contYears + anniAl;
+  const donna = penState.sesso === 'f', puro = penState.regime === 'contributivo';
+  const AS = PEN_ASSEGNO_SOCIALE_2026, lordaOggi = r.pensioneLordaAnn / Math.pow(1 + penState.infl, anniAl);
+  const _md = penMadre(), sc = scontoOverride != null ? scontoOverride : (r.madre === 'eta' && _md ? _md.mesi / 12 : 0);
+  const etaV = 67 + delta - sc, etaAC = 64 + delta - sc, etaV71 = 71 + delta - sc, reqAnt = (donna ? 41 : 42) + 10 / 12 + delta;
+  const mult = donna && penState.figli >= 2 ? 2.6 : donna && penState.figli === 1 ? 2.8 : (anno >= 2030 ? 3.2 : 3.0);
+  const T = 1 / 24, eur = v => fmtP(Math.round(v));
+  const canali = [
+    { nome: 'pensione di vecchiaia', ok: retAge >= etaV - T && anni >= 20 && (!puro || lordaOggi >= AS),
+      manca: retAge < etaV - T ? `servono ${fmtEta(etaV)} di età` : anni < 20 ? `servono 20 anni di contributi (ne avresti ${anni})` : `la pensione deve raggiungere l'assegno sociale (${eur(AS)} l'anno in euro di oggi; la tua stima è ${eur(lordaOggi)})` },
+    { nome: 'pensione anticipata', ok: anni >= reqAnt - T, manca: `servono ${fmtEta(reqAnt)} di contributi (ne avresti ${anni})` },
+  ];
+  if (puro) {
+    canali.push({ nome: 'pensione anticipata contributiva', ok: retAge >= etaAC - T && anni >= 20 && lordaOggi >= mult * AS,
+      manca: retAge < etaAC - T ? `servono ${fmtEta(etaAC)} di età` : anni < 20 ? `servono 20 anni di contributi effettivi (ne avresti ${anni})` : `la pensione deve essere almeno ${String(mult).replace('.', ',')} volte l'assegno sociale (${eur(mult * AS)} l'anno in euro di oggi; la tua stima è ${eur(lordaOggi)})` });
+    canali.push({ nome: 'vecchiaia contributiva con soli 5 anni di contributi', ok: retAge >= etaV71 - T && anni >= 5, manca: retAge < etaV71 - T ? `servono ${fmtEta(etaV71)} di età` : 'servono 5 anni di contributi effettivi' });
+  }
+  return { ok: canali.some(c => c.ok), canali, anno, anni, retAge, madre: r.madre || null };
+}
+// Prima eta' (intera) alla quale risulta raggiunto almeno un canale, ricalcolando la pensione
+function penPrimaEtaUtile() {
+  const saved = penState.retAge; let found = null;
+  try {
+    for (let a = saved + 1; a <= 75 && !found; a++) {
+      penState.retAge = a; const q = penRequisiti(calcPensione());
+      if (q.ok) found = { eta: a, canale: q.canali.find(c => c.ok).nome };
+    }
+  } catch (e) {} finally { penState.retAge = saved; }
+  return found;
+}
+function penRequisitiTesto() {
+  const q = penRequisiti(calcPensione());
+  if (q.ok) return { q, nota: penMadreNota(q), txt: `A ${q.retAge} anni (nel ${q.anno}), con ${q.anni} anni di contributi, risultano raggiunti i requisiti per: ${q.canali.filter(c => c.ok).map(c => c.nome).join(', ')}.` };
+  const p = penPrimaEtaUtile();
+  return { q, prima: p, nota: penMadreNota(q), txt: `A ${q.retAge} anni (nel ${q.anno}), con ${q.anni} anni di contributi, non risulta raggiunto nessun canale di uscita.` + (p ? ` Prima età utile stimata: ${p.eta} anni (${p.canale}).` : '') };
+}
+function penRenderRequisiti() {
+  const box = document.getElementById('penReqBox'); if (!box) return;
+  let o; try { o = penRequisitiTesto(); } catch (e) { box.innerHTML = ''; return; }
+  const q = o.q, col = q.ok ? 'var(--green)' : 'var(--red)';
+  const nota = `<div style="font-size:10.5px;color:var(--text3);margin-top:6px">Verifica indicativa: carriera senza interruzioni e requisiti futuri stimati con gli adeguamenti alla speranza di vita. Non considera finestre di decorrenza, Quota 103, Opzione donna, APE sociale, lavori usuranti o precoci.</div>`;
+  box.style.cssText = `margin-top:8px;padding:10px 12px;border:1px solid ${col};border-left-width:4px;border-radius:6px;font-size:12.5px;line-height:1.55;color:var(--text)`;
+  box.innerHTML = q.ok
+    ? `<strong style="color:${col}">Requisiti raggiunti.</strong> ${o.txt.replace(/risultano raggiunti i requisiti per: (.*)\.$/, 'puoi uscire con: <strong>$1</strong>.')}${o.nota ? '<div style="margin-top:4px">' + o.nota.trim() + '</div>' : ''}${nota}`
+    : `<strong style="color:${col}">Requisiti non raggiunti.</strong> ${o.txt.split(' Prima età')[0]}<ul style="margin:6px 0 6px 18px;padding:0">${q.canali.map(c => `<li>${c.nome.charAt(0).toUpperCase() + c.nome.slice(1)}: ${c.manca}.</li>`).join('')}</ul>${o.prima ? `Prima età utile stimata: <strong>${o.prima.eta} anni</strong> (${o.prima.canale}). ` : ''}Gli importi qui sotto restano calcolati sull'uscita a ${q.retAge} anni.${o.nota ? '<div style="margin-top:4px">' + o.nota.trim() + '</div>' : ''}${nota}`;
+}
+document.addEventListener('DOMContentLoaded', () => {
+  const bind = (id, attr, fn) => { const g = document.getElementById(id); if (!g) return; g.onclick = e => { const b = e.target.closest('[' + attr + ']'); if (!b) return; fn(b.getAttribute(attr)); g.querySelectorAll('.gbtn').forEach(x => x.classList.toggle('a-blue', x === b)); penApplyCatUI(); renderPensione(); }; };
+  bind('penSessoBtns', 'data-sesso', v => { penState.sesso = v === 'f' ? 'f' : 'm'; });
+  bind('penFigliBtns', 'data-figli', v => { penState.figli = Math.max(0, Math.min(3, +v || 0)); });
+});
+
+// ── Agevolazioni per le lavoratrici madri nel contributivo (L. 335/1995 art. 1 c. 40) ──
+// In alternativa: (a) requisiti di eta' ridotti di 4 mesi per figlio, fino a 12 mesi (vecchiaia e
+// anticipata contributiva); (b) coefficiente di trasformazione di un'eta' piu' alta di 1 anno
+// (1-2 figli) o 2 anni (3 o piu'). Il simulatore applica quella utile: lo sconto sull'eta' solo se
+// serve per raggiungere i requisiti all'eta' scelta, altrimenti il coefficiente piu' alto.
+var _penMadreForce = null;
+function penMadre() {
+  if (penState.sesso !== 'f' || !(penState.figli >= 1) || penState.regime !== 'contributivo') return null;
+  return { k: penState.figli >= 3 ? 2 : 1, mesi: Math.min(12, 4 * penState.figli) };
+}
+function penMadreScelta() {
+  if (!penMadre()) return null;
+  if (_penMadreForce) return _penMadreForce;
+  try { _penMadreForce = 'coeff'; return penRequisiti(calcPensione(), 0).ok ? 'coeff' : 'eta'; }
+  catch (e) { return 'coeff'; } finally { _penMadreForce = null; }
+}
+function penMadreNota(q) {
+  const m = penMadre(); if (!m || !q.madre) return '';
+  return q.madre === 'coeff'
+    ? ` Agevolazione per le madri applicata: pensione calcolata con il coefficiente di ${m.k === 2 ? 'due anni' : 'un anno'} più alto.`
+    : ` Agevolazione per le madri applicata: requisiti di età ridotti di ${m.mesi} mesi.`;
+}

@@ -416,7 +416,7 @@ function suitePensione() {
   eval(grab(SRC.pens, /let penState = \{[\s\S]*?\n\};/).replace('let ', 'global.'));
   loadConst(SRC.pens, /const COEFF_TRASF = \{[\s\S]*?\n\};/);
   loadConst(SRC.pens, /const PEN_CATEGORIE = \{[\s\S]*?\n\};/);
-  ['penCat','getCoeffTrasf','calcIRPEF','calcAliqMargIRPEF','sanitizeRalChanges','penRalPath','calcPensione'].forEach(fn => loadFn(SRC.pens, fn));
+  ['penCat','penMadre','penMadreScelta','getCoeffTrasf','calcIRPEF','calcAliqMargIRPEF','sanitizeRalChanges','penRalPath','calcPensione'].forEach(fn => loadFn(SRC.pens, fn));
 
   // 6.0 Categoria lavorativa (2026-11-13): aliquote 33/33/25/24% e default RGS 1,5%
   if (global.PEN_CATEGORIE) {
@@ -651,7 +651,7 @@ function suiteFactors() {
     ok(/anniRetrib\s*=.*2012 - annoInizioContrib/.test(penSrc2), 'Regimi: retributivo con taglio Fornero 31/12/2011');
     ok(/cumMontantePost \* coeffTrasf/.test(penSrc2) && /annoTaglio = regime === 'misto' \? 1996/.test(penSrc2), 'Regimi: misto senza doppio conteggio (montante post-1995)');
     ok(/for \(let k = contYears - 1; k >= 0; k--\)/.test(penSrc2), 'Regimi: capitalizzazione montante dal contributo più vecchio');
-    ok(/MASSIMALE_2025 = 120607/.test(penSrc2) && /regime === 'contributivo'[\s\S]{0,120}Math\.min\(curRal, MASSIMALE_2025/.test(penSrc2), 'Regimi: massimale contributivo solo per il puro');
+    ok(/MASSIMALE_2026 = 122295/.test(penSrc2) && /regime === 'contributivo'[\s\S]{0,120}Math\.min\(curRal, MASSIMALE_2026/.test(penSrc2), 'Regimi: massimale contributivo solo per il puro');
     ok(/almeno 18 anni/.test(penSrc2) === false || true, 'Regimi: descrizioni');
     ok(/meno di 18 anni<\/strong>/.test(penSrc2) && /31\/12\/2011/.test(penSrc2), 'Regimi: descrizioni allineate alla norma');
   } catch(e){ warn('Regimi: non verificabili — ' + e.message.slice(0,40)); }

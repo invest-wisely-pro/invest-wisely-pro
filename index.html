@@ -258,7 +258,7 @@
       <h3>Cosa inserire</h3>
       <ul>
         <li><b>Categoria lavorativa</b>: dipendente privato o pubblico (aliquota 33%, TFR, fondi negoziali), autonomo con P.IVA in Gestione separata (25%) o artigiano/commerciante (24%), senza TFR né contributo del datore. Per gli autonomi scegli anche il regime fiscale: nel forfettario i versamenti al fondo non danno risparmio IRPEF. Le casse professionali non sono modellate.</li>
-        <li><b>Età</b> attuale e di pensionamento, anni di contributi già versati.</li>
+        <li><b>Età</b> attuale e di pensionamento, anni di contributi già versati. Con <b>sesso</b> e numero di figli la scheda verifica in modo indicativo se all'età scelta risultano raggiunti i requisiti (vecchiaia, anticipata, anticipata contributiva) e, se non lo sono, indica la prima età utile. Per le lavoratrici madri nel contributivo applica l'agevolazione di legge più utile: requisiti di età ridotti di 4 mesi per figlio (fino a 12) se servono per uscire all'età scelta, altrimenti un coefficiente di trasformazione più alto (di un anno con uno o due figli, di due anni con tre o più).</li>
         <li><b>RAL</b> lorda e crescita reale attesa; eventuali <b>variazioni di carriera</b> (fino a 10), indicate in euro di oggi. Nella tabella di accumulo ogni riga è un anno indicato con l'età a fine anno: una variazione "dai 42 anni" compare nella riga 43.</li>
         <li><b>Fondo pensione</b>: versamento mensile, contributo del datore e del lavoratore (fondi negoziali), destinazione del TFR.</li>
         <li><b>Capitale ETF</b>: si importa dal Simulatore; se poi cambi il Simulatore compare un avviso finché non lo reimporti.</li>
@@ -1626,6 +1626,11 @@
       <button class="gbtn" data-cat="artcom">Artigiano / Commerciante</button>
     </div>
     <div id="penCatDesc" class="adv-desc" style="margin-top:8px"></div>
+    <div style="display:flex;flex-wrap:wrap;gap:8px 16px;align-items:center;margin-top:10px">
+      <div class="btn-group" id="penSessoBtns" style="flex-wrap:wrap"><button class="gbtn a-blue" data-sesso="m">Uomo</button><button class="gbtn" data-sesso="f">Donna</button></div>
+      <div class="btn-group" id="penFigliBtns" style="flex-wrap:wrap;display:none"><button class="gbtn a-blue" data-figli="0">Senza figli</button><button class="gbtn" data-figli="1">1 figlio</button><button class="gbtn" data-figli="2">2 figli</button><button class="gbtn" data-figli="3">3 o più figli</button></div>
+      <span style="font-size:11px;color:var(--text3)">Servono per i requisiti di accesso e, per le madri nel contributivo, per le agevolazioni di legge.</span>
+    </div>
   </div>
 
   <div class="grid-2" style="margin-bottom:16px">
@@ -1694,6 +1699,7 @@
         <div class="plabel"><span>Età di pensionamento</span><span class="pval" id="lPenRetAge">67</span></div>
         <input type="range" id="sPenRetAge" min="60" max="71" step="1" value="67" oninput="penState.retAge=+this.value;document.getElementById('lPenRetAge').textContent=this.value;renderPensione()">
         <div class="hint" id="penAgeLawHint" style="margin-top:4px"></div>
+        <div id="penReqBox"></div>
       </div>
       <div class="pblock" style="margin-bottom:10px">
         <div class="plabel"><span>Aspettativa di vita</span><span class="pval" id="lPenLifeExp">85</span></div>
