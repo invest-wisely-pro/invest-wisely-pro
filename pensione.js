@@ -849,7 +849,7 @@ async function generatePensionePDF() {
         ...(penCat().dip ? [['TFR versato al Fondo', penState.tfrSi ? 'Si' : 'No', 'Fondo negoziale (contributo datoriale)', penState.isNegoziale ? 'Si' : 'No']] : []),
         [penState.etfBridgeYears > 0 ? `Capitale ETF al pensionamento (dopo ${penState.etfBridgeYears} anni di ponte)` : 'Capitale ETF stimato al pensionamento', fmtP(penState.etfCapital) + (penEtfStale() ? ' (DA REIMPORTARE: il Simulatore e cambiato)' : ''), 'Rendimento ETF netto atteso', (penState.etfRet * 100).toFixed(1) + '%/a'],
       ],
-      styles: { fontSize: 8, cellPadding: 2.0 },
+      styles: { fontSize: 8, cellPadding: 1.55 },
       headStyles: { fillColor: LBG, textColor: GRAY, fontStyle: 'bold', fontSize: 7.5 },
       margin: { left: ML, right: MR }
     });
@@ -873,7 +873,7 @@ async function generatePensionePDF() {
         ['Coefficiente di trasformazione applicato', (r.coeffTrasf * 100).toFixed(3) + '%'],
         ['Montante contributivo finale', fmtP(r.cumMontante)],
       ],
-      styles: { fontSize: 8, cellPadding: 2.0 },
+      styles: { fontSize: 8, cellPadding: 1.55 },
       headStyles: { fillColor: LBG, textColor: GRAY, fontStyle: 'bold', fontSize: 7.5 },
       margin: { left: ML, right: MR }
     });
@@ -899,7 +899,7 @@ async function generatePensionePDF() {
         ['Rendita netta mensile stimata', fmtP(r.rendFPMens)],
         ['Rendita netta mensile in euro di oggi', fmtP(Math.round(r.rendFPMens / _deflaz))],
       ],
-      styles: { fontSize: 7.8, cellPadding: 1.9 },
+      styles: { fontSize: 7.8, cellPadding: 1.5 },
       headStyles: { fillColor: LBG, textColor: GRAY, fontStyle: 'bold', fontSize: 7.5 },
       margin: { left: ML, right: MR }
     });
@@ -931,7 +931,7 @@ async function generatePensionePDF() {
         ['Fabbisogno desiderato', fmtP(Math.round(fabbNom)), fmtP(penState.desired)],
         [bold('Scoperto (gap)'), bold(gapNom > 0 ? fmtP(Math.round(gapNom)) : 'nessuno'), bold(gapNom > 0 ? toOggi(gapNom) : 'nessuno')],
       ],
-      styles: { fontSize: 8, cellPadding: 2.0 },
+      styles: { fontSize: 8, cellPadding: 1.55 },
       headStyles: { fillColor: LBG, textColor: GRAY, fontStyle: 'bold', fontSize: 7.5 },
       margin: { left: ML, right: MR }
     });
